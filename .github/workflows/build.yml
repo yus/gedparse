@@ -29,26 +29,25 @@ jobs:
       with:
         node-version: 24.x
     
-    - name: Clear npm cache
-      run: |
-        npm cache clean --force
-        rm -rf node_modules package-lock.json
-    
     - name: Enable Corepack
       run: corepack enable
     
+    # Удаляем package-lock.json (на всякий случай)
+    - name: Remove npm lock file
+      run: rm -f package-lock.json
+    
     - name: Install dependencies with Yarn
       run: yarn install --no-immutable
-    
-    - name: Install Capacitor packages
-      run: yarn add @capacitor/cli @capacitor/android @capacitor/core @capacitor/filesystem
     
     - name: Build Android APK
       run: |
         # Очищаем старые конфиги
         rm -rf android capacitor.config.json
         
-        # Инициализируем Capacitor
+        # Устанавливаем Capacitor
+        yarn add @capacitor/android @capacitor/core @capacitor/filesystem
+        
+        # Инициализируем
         yarn cap init gedparse com.yus.gedparse --web-dir=www
         
         # Добавляем Android
@@ -67,14 +66,3 @@ jobs:
       with:
         name: gedparse-debug
         path: android/app/build/outputs/apk/debug/app-debug.apk
-    
-    - name: Create release APK
-      if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: android/app/build/outputs/apk/debug/app-debug.apk
-        asset_name: gedparse-v${{ github.ref_name }}.apk
-        asset_content_type: application/vnd.android.package-archive
