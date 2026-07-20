@@ -1,4 +1,4 @@
-name: GEDCOM Test App Build
+name: Build Capacitor Android APK
 
 on:
   push:
@@ -9,55 +9,57 @@ on:
     types: [created]
 
 jobs:
-  test-and-build:
+  build:
     runs-on: ubuntu-latest
-    
-    strategy:
-      matrix:
-        node-version: [24.x]
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Use Node.js ${{ matrix.node-version }}
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+    
+    - name: Setup Android SDK
+      uses: android-actions/setup-android@v3
+    
+    - name: Use Node.js 24
       uses: actions/setup-node@v4
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 24.x
     
-    - name: Install Yarn
-      run: npm install -g yarn
+    - name: Enable Corepack
+      run: corepack enable
     
-    - name: Install dependencies with Yarn
-      run: yarn install --no-cache
+    - name: Install dependencies
+      run: yarn install --immutable
     
-    - name: Run tests
-      run: yarn test
+    - name: Install Capacitor
+      run: yarn add -D @capacitor/cli @capacitor/android
     
-    - name: Build application
-      run: yarn build
-    
-    - name: Create distribution package
+    - name: Build Android APK
       run: |
-        mkdir -p dist
-        cp -r src index.js package.json dist/
-        cp -r node_modules dist/
-        tar -czf gedparse.tar.gz dist/
+        npx cap init gedparse com.yus.gedparse
+        npx cap add android
+        npx cap sync
+        cd android
+        chmod +x gradlew
+        ./gradlew assembleDebug
     
-    - name: Upload artifacts
+    - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: gedparse
-        path: |
-          gedparse.tar.gz
-          dist/
+        name: gedparse-debug
+        path: android/app/build/outputs/apk/debug/app-debug.apk
     
-    - name: Create release
+    - name: Create release APK
       if: github.event_name == 'release'
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./gedparse.tar.gz
-        asset_name: gedparse-v${{ github.ref_name }}.tar.gz
-        asset_content_type: application/gzip
+        asset_path: android/app/build/outputs/apk/debug/app-debug.apk
+        asset_name: gedparse-v${{ github.ref_name }}.apk
+        asset_content_type: application/vnd.android.package-archive
