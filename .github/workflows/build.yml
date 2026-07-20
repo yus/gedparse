@@ -24,15 +24,17 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     
-    - name: Install dependencies
-      run: |
-        npm install --no-audit --no-fund --legacy-peer-deps
+    - name: Install Yarn
+      run: npm install -g yarn
+    
+    - name: Install dependencies with Yarn
+      run: yarn install --no-cache
     
     - name: Run tests
-      run: npm test
+      run: yarn test
     
     - name: Build application
-      run: npm run build
+      run: yarn build
     
     - name: Create distribution package
       run: |
