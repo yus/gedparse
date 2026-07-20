@@ -98,13 +98,13 @@ export class MigrationValidator {
     #validateSex(field, recordId) {
         const sex = field.value.toUpperCase();
         const validSex = ['M', 'F', 'X', 'U'];
-        
+    
         if (!validSex.includes(sex)) {
             this.#warnings.push({
                 recordId,
                 field: 'SEX',
                 value: field.value,
-                message: 'Некорректное значение SEX',
+                message: `Некорректное значение SEX: "${field.value}"`,
                 suggestion: 'Используйте M, F, X или U',
                 severity: 'high'
             });

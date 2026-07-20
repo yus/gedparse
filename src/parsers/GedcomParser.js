@@ -15,8 +15,9 @@ export class GedcomParser {
         this.#lineNumber = 0;
         
         const lines = content.split('\n');
-        const stack = [];
+        const recordStack = [];
         let currentRecord = null;
+        let fieldStack = [];
 
         for (const line of lines) {
             this.#lineNumber++;
@@ -34,8 +35,11 @@ export class GedcomParser {
                 currentRecord = new GedcomRecord(id, type);
                 currentRecord.rawLine = trimmed;
                 this.#records.push(currentRecord);
-                stack.length = 0;
-                stack.push(currentRecord.fields);
+                
+                // Сбрасываем стек полей
+                recordStack.length = 0;
+                fieldStack = [currentRecord.fields];
+                recordStack.push(currentRecord.fields);
             } else {
                 // Поле внутри записи
                 if (!currentRecord) {
@@ -43,13 +47,14 @@ export class GedcomParser {
                 }
 
                 // Поднимаемся на нужный уровень
-                while (stack.length > level + 1) {
-                    stack.pop();
+                while (fieldStack.length > level) {
+                    fieldStack.pop();
                 }
 
-                const parent = stack[stack.length - 1];
+                const parent = fieldStack[fieldStack.length - 1];
                 const field = new GedcomField(tag, value);
                 
+                // Добавляем поле в родителя
                 if (Array.isArray(parent)) {
                     parent.push(field);
                 } else if (parent instanceof GedcomField) {
@@ -57,10 +62,10 @@ export class GedcomParser {
                 }
 
                 // Обновляем стек для следующего уровня
-                if (stack.length <= level) {
-                    stack.push(field);
+                if (fieldStack.length <= level) {
+                    fieldStack.push(field);
                 } else {
-                    stack[stack.length - 1] = field;
+                    fieldStack[fieldStack.length - 1] = field;
                 }
             }
         }
@@ -83,8 +88,10 @@ export class GedcomParser {
 
     #parseRecordHeader(tag, value) {
         if (tag.startsWith('@') && tag.endsWith('@')) {
+            // ID найден, тип идет дальше
             return [tag, value];
         }
+        // Нет ID, это просто тип записи
         return ['', tag];
     }
 
