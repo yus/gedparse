@@ -42,9 +42,15 @@ jobs:
     
     - name: Build Android APK
       run: |
-        cap init gedparse com.yus.gedparse
-        cap add android
-        cap sync
+        # Очищаем старые настройки
+        rm -rf android capacitor.config.json
+    
+        # Инициализируем заново
+        npx @capacitor/cli init gedparse com.yus.gedparse
+        npx @capacitor/cli add android
+        npx @capacitor/cli sync
+    
+        # Собираем APK
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug
