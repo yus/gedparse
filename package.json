@@ -26,5 +26,10 @@
   },
   "keywords": ["gedcom", "migration", "genealogy", "validator"],
   "author": "yus",
-  "license": "MIT"
+  "license": "MIT",
+  "overrides": {
+    "set-function-length": "1.2.2",
+    "hasown": "2.0.2",
+    "undici-types": "5.26.5"
+  }
 }

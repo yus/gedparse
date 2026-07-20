@@ -24,9 +24,12 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
         cache: 'npm'
+        cache-dependency-path: package-lock.json
     
-    - name: Install dependencies
-      run: npm ci
+    - name: Clean install with npm
+      run: |
+        rm -rf node_modules package-lock.json
+        npm install --no-audit --no-fund --legacy-peer-deps
     
     - name: Run tests
       run: npm test
