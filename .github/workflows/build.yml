@@ -35,11 +35,14 @@ jobs:
     - name: Install dependencies
       run: yarn install --no-immutable
     
+    - name: Install Capacitor CLI globally
+      run: npm install -g @capacitor/cli
+    
     - name: Build Android APK
       run: |
-        npx cap init gedparse com.yus.gedparse
-        npx cap add android
-        npx cap sync
+        cap init gedparse com.yus.gedparse
+        cap add android
+        cap sync
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug
