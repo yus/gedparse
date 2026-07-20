@@ -35,8 +35,10 @@ jobs:
     - name: Install dependencies
       run: yarn install --no-immutable
     
-    - name: Install Capacitor CLI globally
-      run: npm install -g @capacitor/cli
+    - name: Install Capacitor CLI and Android platform
+      run: |
+        npm install -g @capacitor/cli
+        yarn add @capacitor/android @capacitor/core @capacitor/filesystem
     
     - name: Build Android APK
       run: |
