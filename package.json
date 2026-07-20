@@ -1,0 +1,30 @@
+{
+  "name": "gedparse",
+  "version": "1.0.0",
+  "description": "GEDCOM 5.5.1 to 7.0 migration tool with full validation",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "test": "node --test tests/*.test.js",
+    "build": "echo 'Build complete'"
+  },
+  "dependencies": {
+    "chalk": "^5.3.0",
+    "cli-table3": "^0.6.5",
+    "inquirer": "^9.2.12"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0"
+  },
+  "engines": {
+    "node": ">=24.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yus/gedparse.git"
+  },
+  "keywords": ["gedcom", "migration", "genealogy", "validator"],
+  "author": "yus",
+  "license": "MIT"
+}
