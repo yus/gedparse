@@ -35,23 +35,29 @@ jobs:
     - name: Install dependencies
       run: yarn install --no-immutable
     
-    # ВАЖНО: Явно устанавливаем Capacitor пакеты в проект
-    - name: Install Capacitor packages
+    - name: Install dependencies and Capacitor
       run: |
-        yarn add -D @capacitor/cli @capacitor/android @capacitor/core @capacitor/filesystem
+        npm install --no-audit --no-fund --legacy-peer-deps
+        npm install -D @capacitor/cli @capacitor/android @capacitor/core @capacitor/filesystem
     
     - name: Build Android APK
       run: |
-        # Инициализируем Capacitor (создаст capacitor.config.json)
-        npx cap init gedparse com.yus.gedparse
-        
-        # Добавляем Android платформу (теперь @capacitor/android есть в node_modules)
+        # Удаляем старые конфиги
+        rm -rf android capacitor.config.json node_modules/.cache
+    
+        # Устанавливаем Capacitor заново
+        npm install -D @capacitor/cli @capacitor/android @capacitor/core
+    
+        # Инициализируем
+        npx cap init gedparse com.yus.gedparse --web-dir=www
+    
+        # Добавляем Android
         npx cap add android
-        
+    
         # Синхронизируем
         npx cap sync
-        
-        # Собираем APK
+    
+        # Собираем
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug
