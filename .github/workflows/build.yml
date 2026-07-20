@@ -35,9 +35,6 @@ jobs:
     - name: Install dependencies
       run: yarn install --no-immutable
     
-    - name: Install Capacitor
-      run: yarn add -D @capacitor/cli @capacitor/android
-    
     - name: Build Android APK
       run: |
         npx cap init gedparse com.yus.gedparse
