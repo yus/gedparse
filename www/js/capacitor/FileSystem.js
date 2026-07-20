@@ -1,36 +1,42 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
-import { DocumentPicker } from '@capacitor/document-picker';
 
 export class CapacitorFileSystem {
-    static async pickAndReadFile() {
-        try {
-            const result = await DocumentPicker.pick({
-                types: ['text/plain', 'application/octet-stream'],
-                limit: 1
-            });
+    // Для выбора файла используем input элемент
+    static pickAndReadFile() {
+        return new Promise((resolve, reject) => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.ged,.txt';
             
-            if (!result || !result.files || result.files.length === 0) {
-                return null;
-            }
+            input.onchange = async (event) => {
+                const file = event.target.files[0];
+                if (!file) {
+                    resolve(null);
+                    return;
+                }
+                
+                try {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        resolve(e.target.result);
+                    };
+                    reader.onerror = (e) => {
+                        reject(new Error('Ошибка чтения файла'));
+                    };
+                    reader.readAsText(file);
+                } catch (error) {
+                    reject(error);
+                }
+            };
             
-            const file = result.files[0];
-            
-            const readResult = await Filesystem.readFile({
-                path: file.path,
-                directory: Directory.Documents,
-                encoding: Encoding.UTF8
-            });
-            
-            return readResult.data;
-        } catch (error) {
-            console.error('Ошибка чтения файла:', error);
-            throw error;
-        }
+            input.click();
+        });
     }
     
     static async saveFile(filename, content) {
         try {
-            await Filesystem.writeFile({
+            // Для сохранения используем FileSystem API Capacitor
+            const result = await Filesystem.writeFile({
                 path: filename,
                 data: content,
                 directory: Directory.Documents,
@@ -38,6 +44,7 @@ export class CapacitorFileSystem {
             });
             
             alert(`✅ Файл сохранен как: ${filename}`);
+            return result;
         } catch (error) {
             console.error('Ошибка сохранения:', error);
             throw error;
