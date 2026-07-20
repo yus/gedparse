@@ -32,6 +32,9 @@ jobs:
     - name: Enable Corepack
       run: corepack enable
     
+    - name: Clean Gradle cache
+      run: rm -rf ~/.gradle/caches/
+    
     - name: Install dependencies with Yarn
       run: yarn install --no-immutable
     
@@ -52,10 +55,10 @@ jobs:
         # Синхронизируем
         yarn cap sync
         
-        # Собираем APK
+        # Собираем APK с флагом --no-daemon
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug
+        ./gradlew assembleDebug --no-daemon --stacktrace
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
