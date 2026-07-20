@@ -41,7 +41,7 @@ jobs:
       run: yarn install --no-immutable
     
     - name: Install Capacitor packages
-      run: yarn add -D @capacitor/cli @capacitor/android @capacitor/core @capacitor/filesystem
+      run: yarn add @capacitor/cli @capacitor/android @capacitor/core @capacitor/filesystem
     
     - name: Build Android APK
       run: |
