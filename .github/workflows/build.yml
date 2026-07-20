@@ -29,35 +29,35 @@ jobs:
       with:
         node-version: 24.x
     
+    - name: Clear npm cache
+      run: |
+        npm cache clean --force
+        rm -rf node_modules package-lock.json
+    
     - name: Enable Corepack
       run: corepack enable
     
-    - name: Install dependencies
+    - name: Install dependencies with Yarn
       run: yarn install --no-immutable
     
-    - name: Install dependencies and Capacitor
-      run: |
-        npm install --no-audit --no-fund --legacy-peer-deps
-        npm install -D @capacitor/cli @capacitor/android @capacitor/core @capacitor/filesystem
+    - name: Install Capacitor packages
+      run: yarn add -D @capacitor/cli @capacitor/android @capacitor/core @capacitor/filesystem
     
     - name: Build Android APK
       run: |
-        # Удаляем старые конфиги
-        rm -rf android capacitor.config.json node_modules/.cache
-    
-        # Устанавливаем Capacitor заново
-        npm install -D @capacitor/cli @capacitor/android @capacitor/core
-    
-        # Инициализируем
-        npx cap init gedparse com.yus.gedparse --web-dir=www
-    
+        # Очищаем старые конфиги
+        rm -rf android capacitor.config.json
+        
+        # Инициализируем Capacitor
+        yarn cap init gedparse com.yus.gedparse --web-dir=www
+        
         # Добавляем Android
-        npx cap add android
-    
+        yarn cap add android
+        
         # Синхронизируем
-        npx cap sync
-    
-        # Собираем
+        yarn cap sync
+        
+        # Собираем APK
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug
