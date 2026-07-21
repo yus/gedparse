@@ -33,26 +33,30 @@ jobs:
       run: corepack enable
     
     - name: Install dependencies
-      run: yarn install
-      
+      run: yarn install --no-immutable
+    
+    # Кэшируем Gradle зависимости
+    - name: Cache Gradle
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.gradle/caches/
+          ~/.gradle/wrapper/
+          android/.gradle
+        key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+    
     - name: Build Android APK
       run: |
-        # Полностью удаляем Android проект
-        rm -rf android capacitor.config.json
-    
-        # Переустанавливаем Capacitor
-        yarn add @capacitor/android @capacitor/core @capacitor/filesystem
-    
-        # Инициализируем заново
-        yarn cap init gedparse com.yus.gedparse --web-dir=www
-        yarn cap add android
+        # Синхронизируем
         yarn cap sync
-    
-        # Собираем
+        
+        # Собираем с увеличенным таймаутом
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon
-       
+        ./gradlew assembleDebug --no-daemon --max-workers=2 --parallel --build-cache
+    
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
