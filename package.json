@@ -1,18 +1,12 @@
 {
   "name": "gedparse",
   "version": "1.0.0",
-  "description": "GEDCOM 5.5.1 to 7.0 migration tool with full validation",
+  "description": "GEDCOM 5.5.1 to 7.0 migration tool",
   "main": "index.js",
   "type": "module",
   "scripts": {
     "start": "node index.js",
-    "test": "node --test tests/*.test.js",
-    "build": "echo 'Build complete'",
-    "cap:init": "npx cap init gedparse com.yus.gedparse",
-    "cap:add:android": "npx cap add android",
-    "cap:sync": "npx cap sync",
-    "cap:open": "npx cap open android",
-    "cap:build": "npx cap sync && cd android && ./gradlew assembleDebug"
+    "test": "node --test tests/*.test.js"
   },
   "dependencies": {
     "@capacitor/android": "^8.4.2",
@@ -23,23 +17,10 @@
     "inquirer": "^9.2.12"
   },
   "devDependencies": {
-    "@capacitor/cli": "^6.1.0",
+    "@capacitor/cli": "^8.4.2",
     "@types/node": "^20.11.0"
   },
   "engines": {
     "node": ">=24.0.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/yus/gedparse.git"
-  },
-  "keywords": [
-    "gedcom",
-    "migration",
-    "genealogy",
-    "validator"
-  ],
-  "author": "yus",
-  "license": "MIT",
-  "packageManager": "yarn@4.0.2"
+  }
 }
