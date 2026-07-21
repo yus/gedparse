@@ -37,14 +37,22 @@ jobs:
       
     - name: Build Android APK
       run: |
-        # Очищаем кэш Gradle (если есть проблемы)
-        rm -rf ~/.gradle/caches/
-       
+        # Полностью удаляем Android проект
+        rm -rf android capacitor.config.json
+    
+        # Переустанавливаем Capacitor
+        yarn add @capacitor/android @capacitor/core @capacitor/filesystem
+    
+        # Инициализируем заново
+        yarn cap init gedparse com.yus.gedparse --web-dir=www
+        yarn cap add android
+        yarn cap sync
+    
         # Собираем
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug --no-daemon
-    
+       
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
