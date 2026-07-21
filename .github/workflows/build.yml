@@ -39,28 +39,26 @@ jobs:
       run: |
         # Очищаем старые конфиги
         rm -rf android capacitor.config.json
-        
+    
         # Устанавливаем Capacitor
         yarn add @capacitor/android @capacitor/core @capacitor/filesystem
-        
-        # Инициализируем
+    
+        # Инициализируем и добавляем Android
         yarn cap init gedparse com.yus.gedparse --web-dir=www
-        
-        # Добавляем Android
         yarn cap add android
-        
-        # Обновляем Gradle до версии 8.7 (поддерживает Java 21)
-        cd android
-        ./gradlew wrapper --gradle-version 8.7
-        
-        # Синхронизируем
-        cd ..
-        yarn cap sync
-        
-        # Собираем APK
+    
+        # ПРАВИЛЬНЫЙ ПОРЯДОК: сначала обновляем Gradle
         cd android
         chmod +x gradlew
-        ./gradlew assembleDebug --no-daemon --stacktrace
+        ./gradlew wrapper --gradle-version 8.7
+        cd ..
+    
+        # Теперь синхронизируем
+        yarn cap sync
+    
+        # Собираем
+        cd android
+        ./gradlew assembleDebug --no-daemon 
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
