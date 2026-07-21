@@ -1,5 +1,15 @@
 {
   "appId": "com.yus.gedparse",
-  "appName": "gedparse",
-  "webDir": "www"
+  "appName": "GEDParse",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https",
+    "allowNavigation": ["localhost", "127.0.0.1"],
+    "cleartext": true
+  },
+  "android": {
+    "allowMixedContent": true,
+    "minSdkVersion": 24,
+    "targetSdkVersion": 34
+  }
 }

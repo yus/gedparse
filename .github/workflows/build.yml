@@ -38,10 +38,11 @@ jobs:
     - name: Build Android APK
       run: |
         # Удаляем старую android папку (если есть)
-        rm -rf android capacitor.config.json
+        rm -rf android
+        # capacitor.config.json
         
-        npx cap init gedparse com.yus.gedparse --web-dir=www
-        npx cap add android
+        # npx cap init gedparse com.yus.gedparse --web-dir=www
+        # npx cap add android
         npx cap sync
         
         cd android
