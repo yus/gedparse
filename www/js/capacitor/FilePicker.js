@@ -1,69 +1,101 @@
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 
 export class FilePicker {
-    // Базовая папка
     static BASE_DIR = 'Gedparse';
-    
-    // Получить список .ged файлов из папки Gedparse
-    static async listGedFiles() {
+
+    // Проверка доступа и создание папки
+    static async ensureDirectory() {
         try {
-            console.log('📂 Reading directory:', this.BASE_DIR);
+            console.log('🔍 Checking directory...');
             
-            // Пробуем прочитать папку Gedparse
+            // Пробуем прочитать
             const result = await Filesystem.readdir({
                 path: this.BASE_DIR,
-                directory: Directory.Documents  // Пробуем Documents
+                directory: Directory.Documents
             });
             
-            console.log('✅ Files found:', result.files.length);
-            
-            // Фильтруем .ged файлы
-            const gedFiles = result.files
-                .filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.ged'))
-                .map(f => ({
-                    name: f.name,
-                    path: `${this.BASE_DIR}/${f.name}`,
-                    size: f.size || 0,
-                    mtime: f.mtime || new Date()
-                }));
-            
-            // Получаем список подпапок
-            const subDirs = result.files
-                .filter(f => f.type === 'directory')
-                .map(f => f.name);
-            
-            return {
-                files: gedFiles,
-                directories: subDirs,
-                currentDir: this.BASE_DIR,
-                totalFiles: gedFiles.length
-            };
+            console.log('✅ Directory exists:', result);
+            return true;
             
         } catch (error) {
-            console.error('❌ Error reading directory:', error);
+            console.log('❌ Directory not found, creating...');
             
-            // Если папки нет - создаем её
             try {
-                console.log('📁 Creating directory:', this.BASE_DIR);
+                // Создаем папку
                 await Filesystem.mkdir({
                     path: this.BASE_DIR,
                     directory: Directory.Documents,
                     recursive: true
                 });
-                console.log('✅ Directory created');
-                return { files: [], directories: [], currentDir: this.BASE_DIR, totalFiles: 0 };
-            } catch (mkdirError) {
-                console.error('❌ Failed to create directory:', mkdirError);
-                throw new Error('Не удалось создать папку Gedparse');
+                
+                console.log('✅ Directory created!');
+                
+                // Проверяем, что создалось
+                const verify = await Filesystem.readdir({
+                    path: this.BASE_DIR,
+                    directory: Directory.Documents
+                });
+                console.log('✅ Verified:', verify);
+                
+                return true;
+                
+            } catch (createError) {
+                console.error('❌ Failed to create directory:', createError);
+                throw new Error(`Не удалось создать папку: ${createError.message}`);
             }
         }
     }
+
+    // Получить список файлов
+    static async listGedFiles() {
+        try {
+            console.log('📂 listGedFiles() called');
+            
+            // Сначала убедимся, что папка существует
+            await this.ensureDirectory();
+            
+            const result = await Filesystem.readdir({
+                path: this.BASE_DIR,
+                directory: Directory.Documents
+            });
+            
+            console.log('📋 Full readdir result:', JSON.stringify(result, null, 2));
+            
+            const files = result.files
+                .filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.ged'))
+                .map(f => ({
+                    name: f.name,
+                    path: `${this.BASE_DIR}/${f.name}`,
+                    size: f.size || 0,
+                    mtime: f.mtime || new Date(),
+                    uri: f.uri || ''
+                }));
+            
+            const directories = result.files
+                .filter(f => f.type === 'directory')
+                .map(f => f.name);
+            
+            console.log(`✅ Found ${files.length} .ged files, ${directories.length} directories`);
+            
+            return {
+                files,
+                directories,
+                currentDir: this.BASE_DIR,
+                totalFiles: files.length,
+                rawResult: result
+            };
+            
+        } catch (error) {
+            console.error('❌ listGedFiles error:', error);
+            throw error;
+        }
+    }
     
-    // Чтение файла из папки Gedparse
+    // Чтение файла
     static async readFile(filename) {
         try {
             const filePath = `${this.BASE_DIR}/${filename}`;
-            console.log('📖 Reading file:', filePath);
+            console.log(`📖 Reading: ${filePath}`);
             
             const content = await Filesystem.readFile({
                 path: filePath,
@@ -71,27 +103,23 @@ export class FilePicker {
                 encoding: Encoding.UTF8
             });
             
-            console.log('✅ File read, size:', content.length);
+            console.log(`✅ Read ${content.length} bytes`);
             return content;
             
         } catch (error) {
-            console.error('❌ Error reading file:', error);
+            console.error('❌ readFile error:', error);
             throw new Error(`Не удалось прочитать файл: ${filename}`);
         }
     }
     
-    // Сохранение файла в папку Gedparse
+    // Сохранение файла
     static async saveFile(filename, content) {
         try {
             const filePath = `${this.BASE_DIR}/${filename}`;
-            console.log('💾 Saving file:', filePath);
+            console.log(`💾 Saving: ${filePath}`);
             
             // Убеждаемся, что папка существует
-            await Filesystem.mkdir({
-                path: this.BASE_DIR,
-                directory: Directory.Documents,
-                recursive: true
-            });
+            await this.ensureDirectory();
             
             const result = await Filesystem.writeFile({
                 path: filePath,
@@ -100,28 +128,12 @@ export class FilePicker {
                 encoding: Encoding.UTF8
             });
             
-            console.log('✅ File saved');
+            console.log('✅ Save result:', result);
             return result;
             
         } catch (error) {
-            console.error('❌ Error saving file:', error);
+            console.error('❌ saveFile error:', error);
             throw new Error(`Не удалось сохранить файл: ${filename}`);
-        }
-    }
-    
-    // Удаление файла
-    static async deleteFile(filename) {
-        try {
-            const filePath = `${this.BASE_DIR}/${filename}`;
-            await Filesystem.deleteFile({
-                path: filePath,
-                directory: Directory.Documents
-            });
-            console.log('✅ File deleted:', filename);
-            return true;
-        } catch (error) {
-            console.error('❌ Error deleting file:', error);
-            throw new Error(`Не удалось удалить файл: ${filename}`);
         }
     }
 }

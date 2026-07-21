@@ -3,6 +3,12 @@ import { GedcomConverter } from '../../src/converters/GedcomConverter.js';
 import { MigrationValidator } from '../../src/validators/MigrationValidator.js';
 import { FilePicker } from './capacitor/FilePicker.js';
 
+console.log('=== GEDParse APP START ===');
+console.log('📱 Capacitor:', typeof Capacitor !== 'undefined' ? '✅' : '❌');
+console.log('📁 Filesystem:', typeof Filesystem !== 'undefined' ? '✅' : '❌');
+console.log('📂 Directory:', Directory);
+console.log('=============================');
+
 // Инициализация
 const parser = new GedcomParser();
 const converter = new GedcomConverter();
@@ -417,3 +423,93 @@ window.openDirectory = async function(dir) {
 
 console.log('🧬 GEDParse app initialized');
 updateStatus('Ожидание загрузки...');
+
+// ============================================
+// ОТЛАДКА
+// ============================================
+
+const btnDebug = document.createElement('button');
+btnDebug.id = 'btnDebug';
+btnDebug.className = 'btn';
+btnDebug.style.cssText = 'background:#FF5722;color:white;';
+btnDebug.textContent = '🐛 Отладка';
+document.querySelector('.toolbar').appendChild(btnDebug);
+
+btnDebug.addEventListener('click', async () => {
+    console.log('🐛 DEBUG MODE');
+    
+    let debugInfo = '=== ОТЛАДКА ===\n\n';
+    
+    try {
+        // 1. Проверяем Capacitor
+        debugInfo += `📱 Capacitor: ${typeof Capacitor !== 'undefined' ? '✅' : '❌'}\n`;
+        if (typeof Capacitor !== 'undefined') {
+            debugInfo += `   Platform: ${Capacitor.getPlatform()}\n`;
+        }
+        
+        // 2. Проверяем Filesystem
+        debugInfo += `\n📁 Filesystem: ${typeof Filesystem !== 'undefined' ? '✅' : '❌'}\n`;
+        
+        // 3. Проверяем папку Gedparse
+        debugInfo += '\n📂 Проверка папки Gedparse:\n';
+        try {
+            const result = await Filesystem.readdir({
+                path: 'Gedparse',
+                directory: Directory.Documents
+            });
+            debugInfo += `   ✅ Папка существует\n`;
+            debugInfo += `   📄 Файлов: ${result.files.length}\n`;
+            result.files.forEach(f => {
+                debugInfo += `      - ${f.name} (${f.type})\n`;
+            });
+        } catch (e) {
+            debugInfo += `   ❌ Папка не найдена: ${e.message}\n`;
+            
+            // Пробуем создать
+            try {
+                await Filesystem.mkdir({
+                    path: 'Gedparse',
+                    directory: Directory.Documents,
+                    recursive: true
+                });
+                debugInfo += `   ✅ Папка создана!\n`;
+            } catch (createError) {
+                debugInfo += `   ❌ Ошибка создания: ${createError.message}\n`;
+            }
+        }
+        
+        // 4. Проверяем другие директории
+        debugInfo += '\n📁 Проверка других директорий:\n';
+        const dirs = ['Documents', 'Downloads', 'Data', 'Cache'];
+        for (const dir of dirs) {
+            try {
+                const result = await Filesystem.readdir({
+                    path: '',
+                    directory: Directory[dir]
+                });
+                debugInfo += `   ✅ ${dir}: ${result.files.length} файлов\n`;
+            } catch (e) {
+                debugInfo += `   ❌ ${dir}: ${e.message}\n`;
+            }
+        }
+        
+        // 5. Состояние приложения
+        debugInfo += '\n📊 Состояние приложения:\n';
+        debugInfo += `   Записей загружено: ${currentRecords.length}\n`;
+        debugInfo += `   Сконвертировано: ${convertedRecords.length}\n`;
+        debugInfo += `   Предупреждений: ${warnings.length}\n`;
+        
+    } catch (error) {
+        debugInfo += `\n❌ Ошибка отладки: ${error.message}\n`;
+        console.error('Debug error:', error);
+    }
+    
+    // Показываем в alert
+    alert(debugInfo);
+    
+    // И в консоль
+    console.log(debugInfo);
+});
+
+// Обновляем статус при запуске
+updateStatus('🚀 Приложение запущено. Нажмите "Отладка" для проверки.');
