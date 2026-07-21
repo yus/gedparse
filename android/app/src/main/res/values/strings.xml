@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">gedparse</string>
+    <string name="title_activity_main">gedparse</string>
+    <string name="package_name">com.yus.gedparse</string>
+    <string name="custom_url_scheme">com.yus.gedparse</string>
+</resources>

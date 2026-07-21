@@ -5,12 +5,12 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@capacitor/android@npm:^6.1.0":
-  version: 6.2.1
-  resolution: "@capacitor/android@npm:6.2.1"
+"@capacitor/android@npm:^8.4.2":
+  version: 8.4.2
+  resolution: "@capacitor/android@npm:8.4.2"
   peerDependencies:
-    "@capacitor/core": ^6.2.0
-  checksum: 2c571d02bb98a84aff9c721b9a989d3beb452205f8b3018ef69b52005aa433cf62a6e0d49472e604ac3ac654455b2be75a63aa109e2c7640191a4e46aab30c40
+    "@capacitor/core": ^8.4.0
+  checksum: e9bf7a98b45b06f66239ca19e923c85392f9d20edf24045c36653eb79c856fa7624e8bc6b88b718fa9ece1646b8ad79c8f12d4a35fc2e4611602d8f8a798954d
   languageName: node
   linkType: hard
 
@@ -42,21 +42,30 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@capacitor/core@npm:^6.1.0":
-  version: 6.2.1
-  resolution: "@capacitor/core@npm:6.2.1"
+"@capacitor/core@npm:^8.4.2":
+  version: 8.4.2
+  resolution: "@capacitor/core@npm:8.4.2"
   dependencies:
     tslib: "npm:^2.1.0"
-  checksum: 09562ab35724eda31f9675fba11905b60d8bc31831e1d4b8f08476c043ca5bf4e5f674ec5ba63a5544e759c2269cb23b6bfe246ad6e998ecceef3f0e8d0129bb
+  checksum: 10526fbce67ae055e6bb9231afd0f149463152c7f6d3e3562b5b70d16e8f1dd60e5803c209949432df6d5d666caf264242ad0c91e7744e8e3875c2dfc360b174
   languageName: node
   linkType: hard
 
-"@capacitor/filesystem@npm:^6.0.0":
-  version: 6.0.4
-  resolution: "@capacitor/filesystem@npm:6.0.4"
+"@capacitor/filesystem@npm:^8.1.2":
+  version: 8.1.2
+  resolution: "@capacitor/filesystem@npm:8.1.2"
+  dependencies:
+    "@capacitor/synapse": "npm:^1.0.4"
   peerDependencies:
-    "@capacitor/core": ^6.0.0
-  checksum: 23a045b17fd2a9c5877f68017e822b097571ff0d752a0f95669c84b3f5de1f3c7ba6927b6de041083c48f521d56a736b73e83e4d48e0e2f6f8a36548f80fc476
+    "@capacitor/core": ">=8.0.0"
+  checksum: 09e21108f9ef7d106719a4e927bab0657b004aeb7f2c894113339026c620bbe023ac48233fdfb9fd0cde07c30c84e0634e438a06466c3f19b16700682a7c3c3c
+  languageName: node
+  linkType: hard
+
+"@capacitor/synapse@npm:^1.0.4":
+  version: 1.0.4
+  resolution: "@capacitor/synapse@npm:1.0.4"
+  checksum: 83f37d06ebdb4234596f123417043aae8b0fd3b5905d399fe8bb7f1d7c3352c8449bef093793b01a0b3c4a59208ac27aec5b1ed7cf5e399c5c3004cc0ca74646
   languageName: node
   linkType: hard
 
@@ -565,10 +574,10 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "gedparse@workspace:."
   dependencies:
-    "@capacitor/android": "npm:^6.1.0"
+    "@capacitor/android": "npm:^8.4.2"
     "@capacitor/cli": "npm:^6.1.0"
-    "@capacitor/core": "npm:^6.1.0"
-    "@capacitor/filesystem": "npm:^6.0.0"
+    "@capacitor/core": "npm:^8.4.2"
+    "@capacitor/filesystem": "npm:^8.1.2"
     "@types/node": "npm:^20.11.0"
     chalk: "npm:^5.3.0"
     cli-table3: "npm:^0.6.5"

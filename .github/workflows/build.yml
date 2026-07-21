@@ -32,27 +32,15 @@ jobs:
     - name: Enable Corepack
       run: corepack enable
     
-    - name: Install dependencies with Yarn
-      run: yarn install --no-immutable
-    
+    - name: Install dependencies
+      run: yarn install
+      
     - name: Build Android APK
       run: |
-        # Очищаем старые конфиги
-        rm -rf android capacitor.config.json
-        
-        # Устанавливаем Capacitor
-        yarn add @capacitor/android @capacitor/core @capacitor/filesystem
-        
-        # Инициализируем
-        yarn cap init gedparse com.yus.gedparse --web-dir=www
-        
-        # Добавляем Android
-        yarn cap add android
-        
-        # Синхронизируем
-        yarn cap sync
-        
-        # Собираем APK
+        # Очищаем кэш Gradle (если есть проблемы)
+        rm -rf ~/.gradle/caches/
+       
+        # Собираем
         cd android
         chmod +x gradlew
         ./gradlew assembleDebug --no-daemon
