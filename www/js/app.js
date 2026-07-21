@@ -1,7 +1,7 @@
-import { GedcomParser } from 'js/GedcomParser.js';
-import { GedcomConverter } from 'js/GedcomConverter.js';
-import { MigrationValidator } from 'js/MigrationValidator.js';
-import { FilePicker } from 'js/capacitor/FilePicker.js';
+import { GedcomParser } from '/js/GedcomParser.js';
+import { GedcomConverter } from '/js/GedcomConverter.js';
+import { MigrationValidator } from '/js/MigrationValidator.js';
+import { FilePicker } from '/js/capacitor/FilePicker.js';
 
 console.log('=== GEDParse APP START ===');
 console.log('📱 Capacitor:', typeof Capacitor !== 'undefined' ? '✅' : '❌');
