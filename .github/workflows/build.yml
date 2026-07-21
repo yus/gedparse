@@ -46,13 +46,7 @@ jobs:
         # Инициализируем и добавляем Android
         yarn cap init gedparse com.yus.gedparse --web-dir=www
         yarn cap add android
-    
-        # ПРАВИЛЬНЫЙ ПОРЯДОК: сначала обновляем Gradle
-        cd android
-        chmod +x gradlew
-        ./gradlew wrapper --gradle-version 8.7
-        cd ..
-    
+        
         # Теперь синхронизируем
         yarn cap sync
     
