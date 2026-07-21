@@ -2,6 +2,7 @@
   "appId": "com.yus.gedparse",
   "appName": "GEDParse",
   "webDir": "www",
+  "bundledWebRuntime": true,
   "server": {
     "androidScheme": "https",
     "allowNavigation": ["localhost", "127.0.0.1"],

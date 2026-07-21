@@ -42,64 +42,77 @@ function log(message, type = 'info') {
 outputDiv.innerHTML = '';
 log('🧪 CHECK.JS STARTED', 'info');
 
-// Проверка импортов
-async function checkImports() {
-    const files = [
-        { name: 'GedcomParser', path: './GedcomParser.js' },
-        { name: 'GedcomConverter', path: './GedcomConverter.js' },
-        { name: 'MigrationValidator', path: './MigrationValidator.js' },
-        { name: 'FilePicker', path: './capacitor/FilePicker.js' }
+// Проверка загрузки классов (они должны быть загружены через script)
+function checkClasses() {
+    const classes = [
+        { name: 'GedcomParser', obj: window.GedcomParser },
+        { name: 'GedcomConverter', obj: window.GedcomConverter },
+        { name: 'MigrationValidator', obj: window.MigrationValidator },
+        { name: 'FilePicker', obj: window.FilePicker }
     ];
 
     let allLoaded = true;
 
-    for (const file of files) {
-        try {
-            log(`⏳ Загрузка ${file.name}...`, 'info');
-            const module = await import(file.path);
-            const exported = Object.keys(module);
-            log(`✅ ${file.name} загружен: ${exported.join(', ')}`, 'success');
-        } catch (error) {
-            log(`❌ ${file.name} НЕ загружен: ${error.message}`, 'error');
+    for (const cls of classes) {
+        if (cls.obj) {
+            log(`✅ ${cls.name} загружен`, 'success');
+        } else {
+            log(`❌ ${cls.name} НЕ загружен (проверьте script в index.html)`, 'error');
             allLoaded = false;
         }
     }
 
-    if (allLoaded) {
-        log('🎉 ВСЕ МОДУЛИ ЗАГРУЖЕНЫ!', 'success');
-        log('✅ Приложение должно работать', 'success');
-    } else {
-        log('⚠️ НЕКОТОРЫЕ МОДУЛИ НЕ ЗАГРУЖЕНЫ', 'warn');
-        log('💡 Проверьте пути в import', 'warn');
-    }
+    return allLoaded;
+}
 
-    // Проверка Capacitor
+// Проверка Capacitor
+function checkCapacitor() {
     try {
         if (typeof Capacitor !== 'undefined') {
             log(`📱 Capacitor: ${Capacitor.getPlatform()}`, 'success');
+            
+            // Проверяем плагины
+            if (Capacitor.Plugins) {
+                const plugins = Object.keys(Capacitor.Plugins);
+                log(`📦 Плагины: ${plugins.join(', ')}`, 'info');
+                
+                if (Capacitor.Plugins.Filesystem) {
+                    log('✅ Filesystem плагин доступен', 'success');
+                } else {
+                    log('❌ Filesystem плагин НЕ найден', 'error');
+                }
+            }
         } else {
             log('❌ Capacitor не найден', 'error');
         }
     } catch (e) {
         log(`❌ Ошибка Capacitor: ${e.message}`, 'error');
     }
+}
 
-    // Проверка Filesystem
-    try {
-        if (typeof Filesystem !== 'undefined') {
-            log('📁 Filesystem: доступен', 'success');
-        } else {
-            log('❌ Filesystem не найден', 'error');
-        }
-    } catch (e) {
-        log(`❌ Ошибка Filesystem: ${e.message}`, 'error');
+// Основная проверка
+async function runChecks() {
+    log('🔄 Запуск проверки...', 'info');
+    
+    // 1. Проверяем классы
+    const classesLoaded = checkClasses();
+    
+    // 2. Проверяем Capacitor
+    checkCapacitor();
+    
+    // 3. Итог
+    if (classesLoaded) {
+        log('✅ ВСЕ КЛАССЫ ЗАГРУЖЕНЫ!', 'success');
+    } else {
+        log('⚠️ НЕКОТОРЫЕ КЛАССЫ НЕ ЗАГРУЖЕНЫ', 'warn');
+        log('💡 Добавьте в index.html: <script src="js/ИмяФайла.js"></script>', 'warn');
     }
-
+    
     log('🏁 CHECK COMPLETE', 'info');
 }
 
 // Запускаем проверку
-checkImports();
+runChecks();
 
 // Кнопка для скрытия/показа
 const toggleBtn = document.createElement('button');
@@ -143,6 +156,6 @@ retryBtn.style.cssText = `
 retryBtn.onclick = () => {
     outputDiv.innerHTML = '';
     log('🔄 ПОВТОРНАЯ ПРОВЕРКА', 'info');
-    checkImports();
+    runChecks();
 };
 document.body.appendChild(retryBtn);

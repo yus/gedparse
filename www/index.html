@@ -5,14 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GEDParse</title>
     <link rel="stylesheet" href="css/style.css">
+    
+    <!-- Capacitor (генерируется автоматически) -->
+    <script src="capacitor.js"></script>
 </head>
 <body>
-    <div id="testDiv" style="padding:20px;background:red;color:white;">
-        ⚠️ Если вы это видите — HTML загрузился!
-    </div>
-    <button onclick="alert('Кнопка работает!')" style="padding:20px;font-size:20px;">
-        ТЕСТОВАЯ КНОПКА
-    </button>
     <div id="app">
         <header>
             <h1>🧬 GEDParse</h1>
@@ -25,16 +22,16 @@
                 <button id="btnValidate" class="btn secondary" disabled>🔍 Проверить</button>
                 <button id="btnConvert" class="btn success" disabled>🔄 Конвертировать</button>
                 <button id="btnExport" class="btn warning" disabled>💾 Экспорт</button>
-                <button id="btnDebug" class="btn" style="background:#FF5722;color:white;">🐛 Отладка</button>
             </div>
-            
+
             <div id="status" class="status">Ожидание загрузки...</div>
-            <div id="fileManager" style="display:none;"></div>
 
             <div class="stats" id="stats" style="display:none;">
                 <span id="recordCount">0</span> записей
                 <span id="warningCount" style="margin-left:16px;">⚠️ 0</span>
             </div>
+
+            <div id="fileManager" style="display:none;"></div>
 
             <div class="table-container">
                 <table id="gedcomTable">
@@ -52,8 +49,17 @@
             </div>
         </main>
     </div>
+
+    <!-- Загружаем классы через обычные script -->
+    <script src="js/GedcomParser.js"></script>
+    <script src="js/GedcomConverter.js"></script>
+    <script src="js/MigrationValidator.js"></script>
+    <script src="js/capacitor/FilePicker.js"></script>
     
+    <!-- Основной app.js -->
     <script type="module" src="js/app.js"></script>
+    
+    <!-- Дебаггер -->
     <script type="module" src="js/check.js"></script>
 </body>
 </html>

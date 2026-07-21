@@ -1,4 +1,6 @@
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+// import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+
+const { Filesystem, Directory, Encoding } = Capacitor.Plugins;
 
 export class FilePicker {
     static BASE_DIR = 'Gedparse';
