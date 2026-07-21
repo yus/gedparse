@@ -25,15 +25,19 @@ const warningCountEl = document.getElementById('warningCount');
 // Загрузка файла
 btnLoad.addEventListener('click', async () => {
     try {
+        // Используем Capacitor Filesystem для выбора файла
         const content = await CapacitorFileSystem.pickAndReadFile();
-        if (!content) return;
+        if (!content) {
+            updateStatus('❌ Выбор файла отменен');
+            return;
+        }
         
         currentRecords = parser.parse(content);
         convertedRecords = [];
         warnings = [];
         
         renderTable(currentRecords);
-        updateStatus(`Загружено: ${currentRecords.length} записей`);
+        updateStatus(`✅ Загружено: ${currentRecords.length} записей`);
         updateStats(currentRecords.length, 0);
         
         btnValidate.disabled = false;
