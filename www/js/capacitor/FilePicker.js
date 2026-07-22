@@ -1,16 +1,11 @@
-// НЕТ импортов! Используем глобальные объекты
 const { Filesystem, Directory, Encoding } = Capacitor.Plugins;
 const { FilePicker: CapawesomeFilePicker } = Capacitor.Plugins;
 
 class FilePicker {
-    static selectedPath = null;
-
     static async selectFolder() {
         try {
             const result = await CapawesomeFilePicker.pickDirectory();
             if (result && result.path) {
-                this.selectedPath = result.path;
-                localStorage.setItem('gedparse_folder_path', result.path);
                 return result.path;
             }
             return null;
@@ -20,19 +15,10 @@ class FilePicker {
         }
     }
 
-    static async listGedFiles() {
+    static async listGedFiles(folderPath) {
         try {
-            if (!this.selectedPath) {
-                const saved = localStorage.getItem('gedparse_folder_path');
-                if (saved) {
-                    this.selectedPath = saved;
-                } else {
-                    await this.selectFolder();
-                }
-            }
-
             const result = await Filesystem.readdir({
-                path: this.selectedPath,
+                path: folderPath,
                 directory: Directory.Documents
             });
 
@@ -44,27 +30,16 @@ class FilePicker {
                     size: f.size || 0
                 }));
 
-            const directories = result.files
-                .filter(f => f.type === 'directory')
-                .map(f => f.name);
-
-            return {
-                files,
-                directories,
-                currentDir: this.selectedPath,
-                totalFiles: files.length
-            };
+            return { files };
         } catch (error) {
             console.error('❌ listGedFiles error:', error);
-            this.selectedPath = null;
-            localStorage.removeItem('gedparse_folder_path');
             throw error;
         }
     }
 
-    static async readFile(filename) {
+    static async readFile(filename, folderPath) {
         try {
-            const filePath = `${this.selectedPath}/${filename}`;
+            const filePath = `${folderPath}/${filename}`;
             const result = await Filesystem.readFile({
                 path: filePath,
                 directory: Directory.Documents,
@@ -76,9 +51,9 @@ class FilePicker {
         }
     }
 
-    static async saveFile(filename, content) {
+    static async saveFile(filename, content, folderPath) {
         try {
-            const filePath = `${this.selectedPath}/${filename}`;
+            const filePath = `${folderPath}/${filename}`;
             const result = await Filesystem.writeFile({
                 path: filePath,
                 data: typeof content === 'string' ? content : JSON.stringify(content),
@@ -92,5 +67,4 @@ class FilePicker {
     }
 }
 
-// Делаем класс глобальным
 window.FilePicker = FilePicker;

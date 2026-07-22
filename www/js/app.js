@@ -1,14 +1,10 @@
-// ============================================
-// ИМПОРТЫ (глобальные классы уже загружены)
-// ============================================
-
 console.log('=== GEDParse APP START ===');
 console.log('📱 Capacitor:', typeof Capacitor !== 'undefined' ? '✅' : '❌');
 console.log('📁 Filesystem:', Capacitor?.Plugins?.Filesystem ? '✅' : '❌');
 console.log('📁 FilePicker:', Capacitor?.Plugins?.FilePicker ? '✅' : '❌');
 console.log('=============================');
 
-// Инициализация (классы доступны глобально)
+// Инициализация
 const parser = new GedcomParser();
 const converter = new GedcomConverter();
 const validator = new MigrationValidator();
@@ -16,6 +12,7 @@ const validator = new MigrationValidator();
 let currentRecords = [];
 let convertedRecords = [];
 let warnings = [];
+let selectedFolder = null;
 
 // DOM элементы
 const btnSelectFolder = document.getElementById('btnSelectFolder');
@@ -28,9 +25,7 @@ const tableBody = document.getElementById('tableBody');
 const statsEl = document.getElementById('stats');
 const recordCountEl = document.getElementById('recordCount');
 const warningCountEl = document.getElementById('warningCount');
-
-// Контейнер для файлового менеджера
-const fileManagerContainer = document.getElementById('fileManager');
+const drawerEl = document.getElementById('drawer');
 
 // ============================================
 // КНОПКА "ВЫБРАТЬ ПАПКУ"
@@ -41,8 +36,9 @@ btnSelectFolder?.addEventListener('click', async () => {
         updateStatus('📁 Выберите папку с GEDCOM файлами...');
         const uri = await FilePicker.selectFolder();
         if (uri) {
+            selectedFolder = uri;
             updateStatus(`✅ Выбрана папка: ${uri}`);
-            await refreshFileList();
+            await loadFilesFromFolder();
         } else {
             updateStatus('❌ Выбор папки отменен');
         }
@@ -53,16 +49,16 @@ btnSelectFolder?.addEventListener('click', async () => {
 });
 
 // ============================================
-// КНОПКА "ПРИМЕРЫ"
+// КНОПКА "ПРИМЕРЫ" 
 // ============================================
-
-if (btnLoad) {
-    btnLoad.textContent = '📝 Примеры';
-}
 
 btnLoad?.addEventListener('click', async () => {
     try {
-        await showFileManager();
+        if (!selectedFolder) {
+            updateStatus('⚠️ Сначала выберите папку через "📁 Выбрать папку"');
+            return;
+        }
+        await showExamplesDrawer();
     } catch (error) {
         console.error('❌ Error:', error);
         updateStatus(`❌ Ошибка: ${error.message}`);
@@ -70,82 +66,88 @@ btnLoad?.addEventListener('click', async () => {
 });
 
 // ============================================
-// ПОКАЗАТЬ ФАЙЛОВЫЙ МЕНЕДЖЕР
+// ЗАГРУЗКА ФАЙЛОВ ИЗ ПАПКИ
 // ============================================
 
-async function showFileManager() {
-    fileManagerContainer.style.display = 'block';
-    fileManagerContainer.innerHTML = '<div style="text-align:center;padding:20px;">⏳ Загрузка...</div>';
-    await refreshFileList();
-}
-
-async function refreshFileList() {
+async function loadFilesFromFolder() {
     try {
-        const result = await FilePicker.listGedFiles();
-        console.log('📂 Files:', result);
-        
-        let html = `
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <div style="font-weight:bold;">📁 ${result.currentDir || 'Не выбрана'}</div>
-                <div style="font-size:12px;color:#999;">${result.totalFiles || 0} .ged файлов</div>
-            </div>
-        `;
-        
-        // Если папка пустая — показываем кнопки создания примеров
-        if (result.files && result.files.length === 0) {
-            html += `
-                <div style="display:flex;gap:8px;margin-bottom:12px;">
-                    <button onclick="window.createSample('5.5.1')" style="flex:1;padding:8px;background:#2196F3;color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;">
-                        📝 Пример 5.5.1
-                    </button>
-                    <button onclick="window.createSample('7.0')" style="flex:1;padding:8px;background:#4CAF50;color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;">
-                        📝 Пример 7.0
-                    </button>
-                </div>
-            `;
-        }
-        
-        // Список файлов
+        const result = await FilePicker.listGedFiles(selectedFolder);
         if (result.files && result.files.length > 0) {
-            html += `<div style="margin:8px 0;font-size:12px;color:#666;">📄 Файлы:</div>`;
+            // Показываем файлы в таблице
+            let tableHtml = '';
             result.files.forEach(file => {
-                const sizeKB = (file.size / 1024).toFixed(1);
-                html += `
-                    <div style="cursor:pointer;padding:8px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;" 
-                         onclick="window.loadFile('${file.name}')">
-                        <span>📄 ${file.name}</span>
-                        <span style="font-size:11px;color:#999;">${sizeKB} KB</span>
-                    </div>
+                tableHtml += `
+                    <tr style="cursor:pointer;" onclick="window.loadFile('${file.name}')">
+                        <td>📄</td>
+                        <td>${file.name}</td>
+                        <td>${(file.size / 1024).toFixed(1)} KB</td>
+                    </tr>
                 `;
             });
+            tableBody.innerHTML = tableHtml;
+            updateStatus(`📂 ${result.files.length} .ged файлов в папке`);
         } else {
-            html += `
-                <div style="padding:20px;text-align:center;color:#999;">
-                    Нет .ged файлов в выбранной папке
-                    <br><br>
-                    <span style="font-size:12px;">Нажмите "Примеры", чтобы создать тестовые файлы</span>
-                </div>
-            `;
+            tableBody.innerHTML = `<tr><td colspan="3" class="empty-state">Нет .ged файлов в папке</td></tr>`;
+            updateStatus('📂 Папка пуста. Нажмите "Примеры" для создания тестовых файлов');
         }
-        
-        fileManagerContainer.innerHTML = html;
-        fileManagerContainer.style.display = 'block';
-        updateStatus(`📂 Папка: ${result.currentDir || 'Не выбрана'} (${result.totalFiles || 0} .ged файлов)`);
-        
     } catch (error) {
         console.error('❌ Error:', error);
-        fileManagerContainer.innerHTML = `
-            <div style="padding:16px;color:#f44336;text-align:center;">
-                ❌ Ошибка доступа к папке<br>
-                <small>${error.message}</small>
-                <br><br>
-                <button onclick="window.refreshFileList()" style="padding:8px 16px;background:#2196F3;color:white;border:none;border-radius:4px;cursor:pointer;">
-                    🔄 Повторить
-                </button>
-            </div>
-        `;
+        updateStatus(`❌ Ошибка загрузки файлов: ${error.message}`);
     }
 }
+
+// ============================================
+// ПОКАЗАТЬ DRAWER С ПРИМЕРАМИ
+// ============================================
+
+function showExamplesDrawer() {
+    drawerEl.innerHTML = `
+        <div style="padding:16px;background:#f5f5f5;border-radius:8px;margin-bottom:16px;">
+            <div style="font-weight:bold;margin-bottom:8px;">📝 Создать примеры GEDCOM файлов</div>
+            <div style="display:flex;gap:8px;">
+                <button onclick="window.createSample('5.5.1')" style="flex:1;padding:8px;background:#2196F3;color:white;border:none;border-radius:4px;cursor:pointer;">
+                    📝 Пример 5.5.1
+                </button>
+                <button onclick="window.createSample('7.0')" style="flex:1;padding:8px;background:#4CAF50;color:white;border:none;border-radius:4px;cursor:pointer;">
+                    📝 Пример 7.0
+                </button>
+            </div>
+        </div>
+    `;
+    drawerEl.style.display = 'block';
+}
+
+// ============================================
+// СОЗДАНИЕ ПРИМЕРОВ
+// ============================================
+
+window.createSample = async function(version) {
+    try {
+        if (!selectedFolder) {
+            updateStatus('⚠️ Сначала выберите папку через "📁 Выбрать папку"');
+            return;
+        }
+        
+        let content = '';
+        let filename = '';
+        
+        if (version === '5.5.1') {
+            filename = 'sample_5_5_1.ged';
+            content = `0 HEAD\n1 GEDC\n2 VERS 5.5.1\n1 CHAR UTF-8\n0 @I1@ INDI\n1 NAME John /Doe/\n2 GIVN John\n2 SURN Doe\n1 SEX M\n1 BIRT\n2 DATE 15 JAN 1980\n1 DEAT\n2 DATE 20 MAR 2020\n0 @I2@ INDI\n1 NAME Mary /Smith/\n2 GIVN Mary\n2 SURN Smith\n1 SEX F\n1 BIRT\n2 DATE 10 JUN 1985\n1 FAMC @F1@\n0 @F1@ FAM\n1 HUSB @I1@\n1 WIFE @I2@\n1 MARR\n2 DATE 14 FEB 2010\n0 TRLR`;
+        } else if (version === '7.0') {
+            filename = 'sample_7_0.ged';
+            content = `0 HEAD\n1 GEDC\n2 VERS 7.0\n1 CHAR UTF-8\n0 @I1@ INDI\n1 NAME John /Doe/\n2 GIVN John\n2 SURN Doe\n1 SEX M\n1 BIRT\n2 DATE 15 JAN 1980\n1 DEAT\n2 DATE 20 MAR 2020\n0 @I2@ INDI\n1 NAME Mary /Smith/\n2 GIVN Mary\n2 SURN Smith\n1 SEX F\n1 BIRT\n2 DATE 10 JUN 1985\n1 FAMC @F1@\n0 @F1@ FAM\n1 HUSB @I1@\n1 WIFE @I2@\n1 MARR\n2 DATE 14 FEB 2010\n0 TRLR`;
+        }
+        
+        await FilePicker.saveFile(filename, content, selectedFolder);
+        updateStatus(`✅ Создан пример: ${filename}`);
+        await loadFilesFromFolder();
+        drawerEl.style.display = 'none';
+    } catch (error) {
+        console.error('❌ Error:', error);
+        updateStatus(`❌ Ошибка создания примера: ${error.message}`);
+    }
+};
 
 // ============================================
 // ЗАГРУЗКА ФАЙЛА
@@ -154,7 +156,7 @@ async function refreshFileList() {
 window.loadFile = async function(filename) {
     try {
         updateStatus(`📖 Загрузка ${filename}...`);
-        const content = await FilePicker.readFile(filename);
+        const content = await FilePicker.readFile(filename, selectedFolder);
         
         currentRecords = parser.parse(content);
         convertedRecords = [];
@@ -167,37 +169,9 @@ window.loadFile = async function(filename) {
         btnValidate.disabled = false;
         btnConvert.disabled = false;
         btnExport.disabled = true;
-        
-        fileManagerContainer.style.display = 'none';
     } catch (error) {
         console.error('❌ Error:', error);
         updateStatus(`❌ Ошибка: ${error.message}`);
-    }
-};
-
-// ============================================
-// СОЗДАНИЕ ПРИМЕРОВ
-// ============================================
-
-window.createSample = async function(version) {
-    try {
-        let content = '';
-        let filename = '';
-        
-        if (version === '5.5.1') {
-            filename = 'sample_5_5_1.ged';
-            content = `0 HEAD\n1 GEDC\n2 VERS 5.5.1\n1 CHAR UTF-8\n0 @I1@ INDI\n1 NAME John /Doe/\n2 GIVN John\n2 SURN Doe\n1 SEX M\n1 BIRT\n2 DATE 15 JAN 1980\n1 DEAT\n2 DATE 20 MAR 2020\n0 @I2@ INDI\n1 NAME Mary /Smith/\n2 GIVN Mary\n2 SURN Smith\n1 SEX F\n1 BIRT\n2 DATE 10 JUN 1985\n1 FAMC @F1@\n0 @F1@ FAM\n1 HUSB @I1@\n1 WIFE @I2@\n1 MARR\n2 DATE 14 FEB 2010\n0 TRLR`;
-        } else if (version === '7.0') {
-            filename = 'sample_7_0.ged';
-            content = `0 HEAD\n1 GEDC\n2 VERS 7.0\n1 CHAR UTF-8\n0 @I1@ INDI\n1 NAME John /Doe/\n2 GIVN John\n2 SURN Doe\n1 SEX M\n1 BIRT\n2 DATE 15 JAN 1980\n1 DEAT\n2 DATE 20 MAR 2020\n0 @I2@ INDI\n1 NAME Mary /Smith/\n2 GIVN Mary\n2 SURN Smith\n1 SEX F\n1 BIRT\n2 DATE 10 JUN 1985\n1 FAMC @F1@\n0 @F1@ FAM\n1 HUSB @I1@\n1 WIFE @I2@\n1 MARR\n2 DATE 14 FEB 2010\n0 TRLR`;
-        }
-        
-        await FilePicker.saveFile(filename, content);
-        updateStatus(`✅ Создан пример: ${filename}`);
-        await refreshFileList();
-    } catch (error) {
-        console.error('❌ Error:', error);
-        updateStatus(`❌ Ошибка создания примера: ${error.message}`);
     }
 };
 
@@ -258,15 +232,19 @@ btnExport?.addEventListener('click', async () => {
     }
     
     try {
+        if (!selectedFolder) {
+            updateStatus('⚠️ Сначала выберите папку через "📁 Выбрать папку"');
+            return;
+        }
+        
         const filename = prompt('Введите имя файла:', 'converted_7_0.ged');
         if (!filename) return;
         
         const content = generateGedcom(convertedRecords);
-        await FilePicker.saveFile(filename, content);
+        await FilePicker.saveFile(filename, content, selectedFolder);
         
         updateStatus(`✅ Файл сохранен как: ${filename}`);
-        alert(`✅ Файл сохранен в выбранной папке как: ${filename}`);
-        await refreshFileList();
+        await loadFilesFromFolder();
     } catch (error) {
         console.error('❌ Error:', error);
         updateStatus(`❌ Ошибка: ${error.message}`);
@@ -293,14 +271,6 @@ function renderTable(records) {
             </td>
         </tr>
     `).join('');
-    
-    if (records.length > 100) {
-        tableBody.innerHTML += `
-            <tr><td colspan="3" style="text-align:center;color:#999;padding:16px;">
-                Показано 100 из ${records.length} записей
-            </td></tr>
-        `;
-    }
 }
 
 function updateStatus(message) {
@@ -342,16 +312,8 @@ function generateField(field, level) {
 }
 
 // ============================================
-// ГЛОБАЛЬНЫЕ ФУНКЦИИ ДЛЯ HTML
-// ============================================
-
-window.refreshFileList = refreshFileList;
-window.loadFile = window.loadFile;
-window.createSample = window.createSample;
-
-// ============================================
 // ИНИЦИАЛИЗАЦИЯ
 // ============================================
 
 console.log('🧬 GEDParse app initialized');
-updateStatus('🚀 Приложение запущено. Выберите папку с GEDCOM файлами.');
+updateStatus('🚀 Выберите папку с GEDCOM файлами');
