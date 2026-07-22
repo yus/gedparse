@@ -1,7 +1,5 @@
 console.log('=== GEDParse APP START ===');
 console.log('📱 Capacitor:', typeof Capacitor !== 'undefined' ? '✅' : '❌');
-console.log('📁 Filesystem:', Capacitor?.Plugins?.Filesystem ? '✅' : '❌');
-console.log('📁 FilePicker:', Capacitor?.Plugins?.FilePicker ? '✅' : '❌');
 
 // Инициализация
 const parser = new GedcomParser();
@@ -24,6 +22,11 @@ const statsEl = document.getElementById('stats');
 const recordCountEl = document.getElementById('recordCount');
 const warningCountEl = document.getElementById('warningCount');
 
+// Кнопки в toolbar
+const btnValidate = document.getElementById('btnValidate');
+const btnConvert = document.getElementById('btnConvert');
+const btnExport = document.getElementById('btnExport');
+
 // ============================================
 // DRAWER УПРАВЛЕНИЕ
 // ============================================
@@ -37,12 +40,8 @@ function closeDrawer() {
     drawer.style.display = 'none';
 }
 
-menuBtn?.addEventListener('click', () => {
-    showMainMenu();
-});
-
+menuBtn?.addEventListener('click', showMainMenu);
 drawerClose?.addEventListener('click', closeDrawer);
-
 drawer?.addEventListener('click', (e) => {
     if (e.target === drawer) closeDrawer();
 });
@@ -80,6 +79,7 @@ window.selectFolder = async function() {
         }
     } catch (e) {
         updateStatus(`❌ ${e.message}`);
+        console.error(e);
     }
 };
 
@@ -89,16 +89,16 @@ window.selectFolder = async function() {
 
 window.refreshFiles = async function() {
     if (!currentFolder) {
-        updateStatus('⚠️ Сначала выберите папку');
+        updateStatus('⚠️ Сначала выберите папку через "📁 Выбрать папку"');
         return;
     }
     try {
         const result = await FilePicker.listGedFiles(currentFolder);
         if (result.files && result.files.length > 0) {
-            let html = '';
+            let html = `<h3>📂 Файлы в папке</h3>`;
             result.files.forEach(file => {
-                const is551 = file.name.includes('5.5.1');
-                const is700 = file.name.includes('7.0');
+                const is551 = file.name.includes('5.5.1') || file.name.includes('551');
+                const is700 = file.name.includes('7.0') || file.name.includes('700');
                 let badge = '<span class="badge-unknown">❓</span>';
                 if (is551) badge = '<span class="badge-551">5.5.1</span>';
                 else if (is700) badge = '<span class="badge-700">7.0</span>';
@@ -110,13 +110,11 @@ window.refreshFiles = async function() {
                     </div>
                 `;
             });
-            // Показываем файлы в drawer
-            openDrawer(`
-                <h3>📂 Файлы в папке</h3>
-                ${html}
+            html += `
                 <hr style="margin:12px 0;">
                 <button class="drawer-btn gray" onclick="closeDrawer()">✕ Закрыть</button>
-            `);
+            `;
+            openDrawer(html);
             updateStatus(`📂 ${result.files.length} файлов найдено`);
         } else {
             updateStatus('📂 Нет .ged файлов');
@@ -129,6 +127,7 @@ window.refreshFiles = async function() {
         }
     } catch (e) {
         updateStatus(`❌ ${e.message}`);
+        console.error(e);
     }
 };
 
@@ -149,6 +148,9 @@ window.loadFilePicker = function() {
             processGedcom(content, file.name);
             closeDrawer();
         };
+        reader.onerror = (e) => {
+            updateStatus('❌ Ошибка чтения файла');
+        };
         reader.readAsText(file);
         document.body.removeChild(input);
     };
@@ -168,6 +170,7 @@ window.loadFile = async function(filename) {
         closeDrawer();
     } catch (e) {
         updateStatus(`❌ ${e.message}`);
+        console.error(e);
     }
 };
 
@@ -183,13 +186,14 @@ function processGedcom(content, filename) {
         renderTable(currentRecords);
         updateStatus(`✅ Загружено ${currentRecords.length} записей из ${filename}`);
         updateStats(currentRecords.length, 0);
-        document.getElementById('btnValidate').disabled = false;
-        document.getElementById('btnConvert').disabled = false;
-        document.getElementById('btnExport').disabled = true;
+        if (btnValidate) btnValidate.disabled = false;
+        if (btnConvert) btnConvert.disabled = false;
+        if (btnExport) btnExport.disabled = true;
     } catch (e) {
         updateStatus(`❌ Ошибка парсинга: ${e.message}`);
+        console.error(e);
     }
-};
+}
 
 // ============================================
 // ПРИМЕРЫ
@@ -197,7 +201,7 @@ function processGedcom(content, filename) {
 
 window.showExamples = function() {
     if (!currentFolder) {
-        updateStatus('⚠️ Сначала выберите папку');
+        updateStatus('⚠️ Сначала выберите папку через "📁 Выбрать папку"');
         return;
     }
     openDrawer(`
@@ -226,14 +230,15 @@ window.createSample = async function(version) {
         await refreshFiles();
     } catch (e) {
         updateStatus(`❌ ${e.message}`);
+        console.error(e);
     }
 };
 
 // ============================================
-// КНОПКИ (ОСТАВЛЯЕМ ТОЛЬКО ЭТИ)
+// КНОПКИ (ТОЛЬКО ЭТИ)
 // ============================================
 
-document.getElementById('btnValidate')?.addEventListener('click', () => {
+btnValidate?.addEventListener('click', () => {
     if (!currentRecords.length) { updateStatus('⚠️ Сначала загрузите файл'); return; }
     warnings = validator.validate(currentRecords);
     updateStats(currentRecords.length, warnings.length);
@@ -241,7 +246,7 @@ document.getElementById('btnValidate')?.addEventListener('click', () => {
     if (warnings.length) showWarnings(warnings);
 });
 
-document.getElementById('btnConvert')?.addEventListener('click', () => {
+btnConvert?.addEventListener('click', () => {
     if (!currentRecords.length) { updateStatus('⚠️ Сначала загрузите файл'); return; }
     const result = converter.convert551to700(currentRecords);
     convertedRecords = result.records;
@@ -249,12 +254,12 @@ document.getElementById('btnConvert')?.addEventListener('click', () => {
     renderTable(convertedRecords);
     updateStatus(`✅ Сконвертировано ${convertedRecords.length} записей`);
     updateStats(convertedRecords.length, warnings.length);
-    document.getElementById('btnExport').disabled = false;
+    if (btnExport) btnExport.disabled = false;
 });
 
-document.getElementById('btnExport')?.addEventListener('click', async () => {
+btnExport?.addEventListener('click', async () => {
     if (!convertedRecords.length) { updateStatus('⚠️ Нет данных'); return; }
-    if (!currentFolder) { updateStatus('⚠️ Выберите папку'); return; }
+    if (!currentFolder) { updateStatus('⚠️ Выберите папку через "📁 Выбрать папку"'); return; }
     const name = prompt('Имя файла:', 'converted_7_0.ged');
     if (!name) return;
     try {
@@ -266,17 +271,48 @@ document.getElementById('btnExport')?.addEventListener('click', async () => {
 });
 
 // ============================================
-// ВСПОМОГАТЕЛЬНЫЕ
+// ТАБЛИЦА С ГОРИЗОНТАЛЬНОЙ ПРОКРУТКОЙ
 // ============================================
 
 function renderTable(records) {
-    if (!records?.length) { tableBody.innerHTML = '<tr><td colspan="3" class="empty-state">Нет записей</td></tr>'; return; }
-    tableBody.innerHTML = records.slice(0, 100).map(r => `
-        <tr><td class="record-id">${r.id || '—'}</td>
-        <td><span class="record-type">${r.type}</span></td>
-        <td class="fields-preview">${r.fields.slice(0,5).map(f=>`${f.tag}:${f.value}`).join(', ')}${r.fields.length>5?'…':''}</td>
-    </tr>`).join('');
+    if (!records?.length) {
+        tableBody.innerHTML = '<tr><td colspan="3" class="empty-state">Нет записей</td></tr>';
+        return;
+    }
+    
+    // Определяем все уникальные теги полей
+    const allTags = new Set();
+    records.forEach(r => r.fields.forEach(f => allTags.add(f.tag)));
+    const tagArray = Array.from(allTags);
+    
+    let html = '<tr><th>ID</th><th>Type</th>';
+    tagArray.forEach(tag => {
+        html += `<th>${tag}</th>`;
+    });
+    html += '</tr>';
+    
+    records.slice(0, 100).forEach(r => {
+        html += `<tr><td class="record-id">${r.id || '—'}</td><td><span class="record-type">${r.type}</span></td>`;
+        tagArray.forEach(tag => {
+            const field = r.fields.find(f => f.tag === tag);
+            const value = field ? field.value : '—';
+            html += `<td>${value}</td>`;
+        });
+        html += '</tr>';
+    });
+    
+    tableBody.innerHTML = html;
+    
+    // Добавляем горизонтальную прокрутку
+    const table = document.getElementById('gedcomTable');
+    table.style.display = 'block';
+    table.style.overflowX = 'auto';
+    table.style.whiteSpace = 'nowrap';
 }
+
+// ============================================
+// ВСПОМОГАТЕЛЬНЫЕ
+// ============================================
 
 function updateStatus(msg) { if (statusEl) statusEl.textContent = msg; }
 function updateStats(c, w) { statsEl.style.display='block'; recordCountEl.textContent=c; warningCountEl.textContent=w; }
@@ -299,3 +335,4 @@ function generateField(f,l) {
 // ============================================
 
 updateStatus('🚀 Откройте меню ☰ и выберите папку или файл');
+console.log('🧬 GEDParse app initialized');
