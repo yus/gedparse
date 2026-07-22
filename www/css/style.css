@@ -225,6 +225,10 @@ tr:hover { background: #f8f9fa; }
     z-index: 10;
 }
 
+.badge-551 { background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+.badge-700 { background: #4caf50; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+.badge-unknown { background: #9e9e9e; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; }
+
 @media (max-width: 600px) {
     .toolbar { flex-direction: column; }
     .btn { min-width: auto; }
