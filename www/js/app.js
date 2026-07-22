@@ -43,25 +43,19 @@ document.querySelector('.table-container').before(fileManagerContainer);
 // ВЫБОР ПАПКИ ЧЕРЕЗ SAF
 // ============================================
 
-btnSelectFolder?.addEventListener('click', async () => {
+document.getElementById('btnSelectFolder')?.addEventListener('click', async () => {
     try {
-        // Запрашиваем у пользователя выбор папки
-        const result = await Filesystem.requestPermissions({
-            permissions: ['publicStorage']
-        });
-        
-        if (result.publicStorage === 'granted') {
-            // Используем Filesystem для выбора директории
-            const uri = await Filesystem.chooseDirectory();
-            if (uri) {
-                // Сохраняем URI для дальнейшей работы
-                localStorage.setItem('selectedFolderUri', uri);
-                updateStatus(`✅ Выбрана папка: ${uri}`);
-            }
+        updateStatus('📁 Выберите папку для GEDCOM файлов...');
+        const uri = await FilePicker.selectFolder();
+        if (uri) {
+            updateStatus(`✅ Выбрана папка: ${uri}`);
+            await refreshFileList();
+        } else {
+            updateStatus('❌ Выбор папки отменен');
         }
     } catch (error) {
-        console.error('❌ Ошибка выбора папки:', error);
-        updateStatus('❌ Ошибка выбора папки');
+        console.error('❌ Error:', error);
+        updateStatus(`❌ Ошибка: ${error.message}`);
     }
 });
 
@@ -338,10 +332,8 @@ btnExport.addEventListener('click', async () => {
         await FilePicker.saveFile(filename, content);
         
         updateStatus(`✅ Файл сохранен как: ${filename}`);
-        alert(`✅ Файл сохранен в папке Gedparse как: ${filename}`);
-        
+        alert(`✅ Файл сохранен в выбранной папке как: ${filename}`);
         await refreshFileList();
-        
     } catch (error) {
         console.error('❌ Error:', error);
         updateStatus(`❌ Ошибка: ${error.message}`);

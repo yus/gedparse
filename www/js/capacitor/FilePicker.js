@@ -15,16 +15,15 @@ class FilePicker {
     static BASE_DIR = 'Gedparse';
     static selectedUri = null;
 
-    // Инициализация: пробуем восстановить URI
     static init() {
-        const saved = localStorage.getItem('selectedFolderUri');
+        const saved = localStorage.getItem('gedparse_folder_uri');
         if (saved) {
             this.selectedUri = saved;
             console.log('📂 Восстановлен URI:', saved);
         }
     }
 
-    // Выбор папки через SAF
+    // ВЫБОР ПАПКИ ЧЕРЕЗ SAF
     static async selectFolder() {
         try {
             // Проверяем разрешения
@@ -36,12 +35,12 @@ class FilePicker {
                 throw new Error('Нет разрешения на доступ к хранилищу');
             }
 
-            // Открываем диалог выбора папки
+            // Открываем диалог выбора папки (SAF!)
             const result = await Filesystem.chooseDirectory();
             
             if (result && result.uri) {
                 this.selectedUri = result.uri;
-                localStorage.setItem('selectedFolderUri', result.uri);
+                localStorage.setItem('gedparse_folder_uri', result.uri);
                 console.log('✅ Выбрана папка:', result.uri);
                 return result.uri;
             }
@@ -55,7 +54,6 @@ class FilePicker {
     // Получить список файлов из выбранной папки
     static async listGedFiles() {
         try {
-            // Если URI не выбран — предлагаем выбрать
             if (!this.selectedUri) {
                 await this.selectFolder();
                 if (!this.selectedUri) {
@@ -88,9 +86,8 @@ class FilePicker {
             };
         } catch (error) {
             console.error('❌ listGedFiles error:', error);
-            // Если ошибка — сбрасываем URI и пробуем заново
             this.selectedUri = null;
-            localStorage.removeItem('selectedFolderUri');
+            localStorage.removeItem('gedparse_folder_uri');
             throw error;
         }
     }
@@ -139,6 +136,5 @@ class FilePicker {
     }
 }
 
-// Инициализация
 FilePicker.init();
 window.FilePicker = FilePicker;
