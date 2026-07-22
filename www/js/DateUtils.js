@@ -253,3 +253,8 @@ export class DateUtils {
         return dateStr;
     }
 }
+
+// Global class
+if (typeof window !== 'undefined') {
+    window.DateUtils = DateUtils;
+}

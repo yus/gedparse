@@ -52,3 +52,8 @@ export class GedcomRecord {
         return result;
     }
 }
+
+// Global class
+if (typeof window !== 'undefined') {
+    window.GedcomRecord = GedcomRecord;
+}

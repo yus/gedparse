@@ -54,3 +54,8 @@ export class GedcomField {
         return result;
     }
 }
+
+// Global class
+if (typeof window !== 'undefined') {
+    window.GedcomField = GedcomField;
+}
