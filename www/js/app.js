@@ -1,7 +1,6 @@
 console.log('=== GEDParse APP START ===');
 console.log('📱 Capacitor:', typeof Capacitor !== 'undefined' ? '✅' : '❌');
 
-// Инициализация
 const parser = new GedcomParser();
 const converter = new GedcomConverter();
 const validator = new MigrationValidator();
@@ -10,6 +9,7 @@ let currentRecords = [];
 let convertedRecords = [];
 let warnings = [];
 let currentFileName = '';
+let currentVersion = '';
 
 // DOM
 const menuBtn = document.getElementById('menuBtn');
@@ -21,6 +21,8 @@ const tableBody = document.getElementById('tableBody');
 const statsEl = document.getElementById('stats');
 const recordCountEl = document.getElementById('recordCount');
 const warningCountEl = document.getElementById('warningCount');
+const btnGraph = document.getElementById('btnGraph');
+const graphContainer = document.getElementById('graph-container');
 
 const btnValidate = document.getElementById('btnValidate');
 const btnConvert = document.getElementById('btnConvert');
@@ -60,7 +62,7 @@ function showMainMenu() {
 }
 
 // ============================================
-// ВЫБОР ФАЙЛА (СИСТЕМНЫЙ ДИАЛОГ)
+// ВЫБОР ФАЙЛА
 // ============================================
 
 window.pickFile = function() {
@@ -70,7 +72,6 @@ window.pickFile = function() {
     input.onchange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
-        
         currentFileName = file.name;
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -78,9 +79,7 @@ window.pickFile = function() {
             processGedcom(content, file.name);
             closeDrawer();
         };
-        reader.onerror = () => {
-            updateStatus('❌ Ошибка чтения файла');
-        };
+        reader.onerror = () => updateStatus('❌ Ошибка чтения файла');
         reader.readAsText(file);
         document.body.removeChild(input);
     };
@@ -89,7 +88,7 @@ window.pickFile = function() {
 };
 
 // ============================================
-// ОПРЕДЕЛЕНИЕ ВЕРСИИ GEDCOM
+// ОПРЕДЕЛЕНИЕ ВЕРСИИ
 // ============================================
 
 function detectGedcomVersion(content) {
@@ -108,23 +107,25 @@ function detectGedcomVersion(content) {
 
 function processGedcom(content, filename) {
     try {
-        const version = detectGedcomVersion(content);
+        currentVersion = detectGedcomVersion(content);
         currentRecords = parser.parse(content);
         convertedRecords = [];
         warnings = [];
         
-        renderTable(currentRecords, version);
-        updateStatus(`✅ ${filename} (${version}) — ${currentRecords.length} записей`);
+        renderTable(currentRecords, currentVersion);
+        updateStatus(`✅ ${filename} (${currentVersion}) — ${currentRecords.length} записей`);
         updateStats(currentRecords.length, 0);
         
         if (btnValidate) btnValidate.disabled = false;
         if (btnConvert) btnConvert.disabled = false;
         if (btnExport) btnExport.disabled = true;
         
-        // Показываем версию в drawer
+        // Показываем кнопку графа
+        btnGraph.style.display = 'block';
+        
         openDrawer(`
             <h3>📄 ${filename}</h3>
-            <p><strong>Версия:</strong> <span class="badge-${version === '7.0' ? '700' : '551'}">${version}</span></p>
+            <p><strong>Версия:</strong> <span class="badge-${currentVersion === '7.0' ? '700' : '551'}">${currentVersion}</span></p>
             <p><strong>Записей:</strong> ${currentRecords.length}</p>
             <hr style="margin:12px 0;">
             <button class="drawer-btn gray" onclick="closeDrawer()">✕ Закрыть</button>
@@ -137,7 +138,7 @@ function processGedcom(content, filename) {
 }
 
 // ============================================
-// ПРИМЕРЫ (В ПРИВАТНОМ ХРАНИЛИЩЕ)
+// ПРИМЕРЫ (СКАЧИВАЮТСЯ В DOWNLOADS)
 // ============================================
 
 const SAMPLE_FILES = {
@@ -154,7 +155,7 @@ const SAMPLE_FILES = {
 window.showExamples = function() {
     openDrawer(`
         <h3>📝 Создать примеры</h3>
-        <p>Выберите версию:</p>
+        <p>Файлы будут скачаны в папку <strong>Downloads</strong>:</p>
         <button class="drawer-btn warning" onclick="window.createSample('5.5.1')">📝 GEDCOM 5.5.1</button>
         <button class="drawer-btn primary" onclick="window.createSample('7.0')">📝 GEDCOM 7.0</button>
         <hr style="margin:12px 0;">
@@ -167,24 +168,25 @@ window.createSample = async function(version) {
         const sample = SAMPLE_FILES[version];
         if (!sample) throw new Error('Неизвестная версия');
         
-        // Создаем Blob и скачиваем через ссылку
+        // Скачиваем через ссылку
         const blob = new Blob([sample.content], { type: 'text/plain' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
         a.download = sample.name;
+        document.body.appendChild(a);
         a.click();
+        document.body.removeChild(a);
         URL.revokeObjectURL(url);
         
-        updateStatus(`✅ Создан пример: ${sample.name} (скачан)`);
+        updateStatus(`✅ Скачан: ${sample.name}`);
         closeDrawer();
         
-        // Предлагаем загрузить созданный файл
         setTimeout(() => {
             openDrawer(`
-                <h3>✅ Пример создан</h3>
-                <p>Файл <strong>${sample.name}</strong> скачан.</p>
-                <p>Теперь вы можете загрузить его через <strong>📂 Выбрать GEDCOM файл</strong></p>
+                <h3>✅ Файл скачан</h3>
+                <p><strong>${sample.name}</strong> сохранен в <strong>Downloads</strong></p>
+                <p>Теперь загрузите его через <strong>📂 Выбрать GEDCOM файл</strong></p>
                 <hr style="margin:12px 0;">
                 <button class="drawer-btn primary" onclick="window.pickFile(); closeDrawer();">📂 Загрузить файл</button>
                 <button class="drawer-btn gray" onclick="closeDrawer()">✕ Закрыть</button>
@@ -198,47 +200,160 @@ window.createSample = async function(version) {
 };
 
 // ============================================
-// ТАБЛИЦА С ВСЕМИ ПОЛЯМИ
+// ТАБЛИЦА
 // ============================================
 
 function renderTable(records, version) {
     if (!records?.length) {
-        tableBody.innerHTML = '<tr><td colspan="3" class="empty-state">Нет записей</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="4" class="empty-state">Нет записей</td></tr>';
         return;
     }
     
-    // Собираем все уникальные теги
     const allTags = new Set();
     records.forEach(r => r.fields.forEach(f => allTags.add(f.tag)));
     const tagArray = Array.from(allTags);
     
     let html = `<tr><th>#</th><th>ID</th><th>Type</th>`;
-    tagArray.forEach(tag => {
-        html += `<th>${tag}</th>`;
-    });
+    tagArray.forEach(tag => html += `<th>${tag}</th>`);
     html += `<th>Version</th></tr>`;
     
     records.slice(0, 100).forEach((r, i) => {
-        html += `<tr>
-            <td>${i + 1}</td>
-            <td class="record-id">${r.id || '—'}</td>
-            <td><span class="record-type">${r.type}</span></td>`;
+        html += `<tr><td>${i+1}</td><td class="record-id">${r.id || '—'}</td><td><span class="record-type">${r.type}</span></td>`;
         tagArray.forEach(tag => {
             const field = r.fields.find(f => f.tag === tag);
             html += `<td>${field ? field.value : '—'}</td>`;
         });
-        html += `<td><span class="badge-${version === '7.0' ? '700' : '551'}">${version || '❓'}</span></td>`;
-        html += '</tr>';
+        html += `<td><span class="badge-${version === '7.0' ? '700' : '551'}">${version || '❓'}</span></td></tr>`;
     });
     
     tableBody.innerHTML = html;
-    
-    // Горизонтальная прокрутка
-    const table = document.getElementById('gedcomTable');
-    table.style.display = 'block';
-    table.style.overflowX = 'auto';
-    table.style.whiteSpace = 'nowrap';
 }
+
+// ============================================
+// ГРАФ СЕМЬИ
+// ============================================
+
+function buildFamilyGraph(records) {
+    const nodes = [];
+    const edges = [];
+    const nodeIds = new Set();
+    
+    // Собираем всех людей (INDI)
+    const indiRecords = records.filter(r => r.type === 'INDI');
+    const famRecords = records.filter(r => r.type === 'FAM');
+    
+    // Добавляем узлы для людей
+    indiRecords.forEach(r => {
+        const id = r.id || `unknown_${Math.random()}`;
+        if (!nodeIds.has(id)) {
+            nodeIds.add(id);
+            // Пытаемся найти имя
+            const nameField = r.fields.find(f => f.tag === 'NAME');
+            const name = nameField ? nameField.value.split('/')[1] || nameField.value : id;
+            nodes.push({ id, label: name, title: name });
+        }
+    });
+    
+    // Добавляем связи из FAM записей
+    famRecords.forEach(fam => {
+        const husbField = fam.fields.find(f => f.tag === 'HUSB');
+        const wifeField = fam.fields.find(f => f.tag === 'WIFE');
+        const childFields = fam.fields.filter(f => f.tag === 'CHIL');
+        
+        // Связь муж-жена
+        if (husbField && wifeField) {
+            edges.push({ from: husbField.value, to: wifeField.value, label: 'marriage', dashes: false });
+        }
+        // Связи родитель-ребенок
+        childFields.forEach(child => {
+            if (husbField) edges.push({ from: husbField.value, to: child.value, label: 'father', dashes: true });
+            if (wifeField) edges.push({ from: wifeField.value, to: child.value, label: 'mother', dashes: true });
+        });
+    });
+    
+    return { nodes, edges };
+}
+
+function renderGraph(records) {
+    try {
+        const { nodes, edges } = buildFamilyGraph(records);
+        if (nodes.length === 0) {
+            graphContainer.innerHTML = '<div style="padding:20px;text-align:center;color:#999;">Нет данных для построения графа</div>';
+            graphContainer.style.display = 'block';
+            return;
+        }
+        
+        // Используем vis-network
+        const container = document.getElementById('graph-container');
+        container.style.display = 'block';
+        container.innerHTML = ''; // Очищаем
+        
+        const data = {
+            nodes: new vis.DataSet(nodes),
+            edges: new vis.DataSet(edges)
+        };
+        
+        const options = {
+            layout: {
+                hierarchical: {
+                    enabled: true,
+                    direction: 'UD',
+                    sortMethod: 'directed'
+                }
+            },
+            physics: {
+                enabled: true,
+                hierarchicalRepulsion: { centralGravity: 0.5 },
+                stabilization: { iterations: 100 }
+            },
+            edges: {
+                smooth: true,
+                arrows: { to: { enabled: false } }
+            },
+            nodes: {
+                shape: 'dot',
+                size: 20,
+                font: { size: 14, face: 'arial' }
+            }
+        };
+        
+        const network = new vis.Network(container, data, options);
+        
+        // Адаптация под размер
+        setTimeout(() => network.fit(), 100);
+        
+        // Добавляем информацию о количестве
+        const info = document.createElement('div');
+        info.style.cssText = 'padding:8px;background:#f5f5f5;border-radius:4px;margin-top:8px;font-size:12px;color:#666;';
+        info.textContent = `👥 ${nodes.length} человек, ${edges.length} связей`;
+        container.parentNode.insertBefore(info, container.nextSibling);
+        
+    } catch (error) {
+        console.error('Ошибка рендеринга графа:', error);
+        graphContainer.innerHTML = `<div style="padding:20px;color:#f44336;">❌ Ошибка построения графа: ${error.message}</div>`;
+        graphContainer.style.display = 'block';
+    }
+}
+
+// ============================================
+// КНОПКА ГРАФА
+// ============================================
+
+btnGraph?.addEventListener('click', () => {
+    if (!currentRecords.length) {
+        updateStatus('⚠️ Сначала загрузите файл');
+        return;
+    }
+    renderGraph(currentRecords);
+    btnGraph.textContent = '📊 Скрыть граф';
+    if (btnGraph.textContent.includes('Скрыть')) {
+        btnGraph.onclick = () => {
+            graphContainer.style.display = 'none';
+            btnGraph.textContent = '📊 Показать граф семьи';
+            btnGraph.onclick = arguments.callee;
+        };
+    }
+});
 
 // ============================================
 // КНОПКИ
