@@ -1,13 +1,12 @@
-// Импортируем плагин
-import { FilePicker as CapawesomeFilePicker } from '@capawesome/capacitor-file-picker';
-import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+// НЕТ импортов! Используем глобальные объекты
+const { Filesystem, Directory, Encoding } = Capacitor.Plugins;
+const { FilePicker: CapawesomeFilePicker } = Capacitor.Plugins;
 
 class FilePicker {
     static selectedPath = null;
 
     static async selectFolder() {
         try {
-            // Используем pickDirectory() из плагина
             const result = await CapawesomeFilePicker.pickDirectory();
             if (result && result.path) {
                 this.selectedPath = result.path;
@@ -93,4 +92,5 @@ class FilePicker {
     }
 }
 
+// Делаем класс глобальным
 window.FilePicker = FilePicker;
