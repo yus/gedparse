@@ -1,6 +1,4 @@
-import { DateUtils } from './DateUtils.js';
-
-export class MigrationValidator {
+class MigrationValidator {
     #warnings;
 
     constructor() {
@@ -283,7 +281,4 @@ export class MigrationValidator {
     }
 }
 
-// Global class
-if (typeof window !== 'undefined') {
-    window.MigrationValidator = MigrationValidator;
-}
+window.MigrationValidator = MigrationValidator;

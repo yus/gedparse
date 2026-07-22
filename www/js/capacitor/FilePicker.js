@@ -1,6 +1,6 @@
 const { Filesystem, Directory, Encoding } = Capacitor.Plugins;
 
-export class FilePicker {
+class FilePicker {
     static BASE_DIR = 'Gedparse';
 
     // Проверка доступа и создание папки
@@ -138,7 +138,4 @@ export class FilePicker {
     }
 }
 
-// Global class
-if (typeof window !== 'undefined') {
-    window.FilePicker = FilePicker;
-}
+window.FilePicker = FilePicker;

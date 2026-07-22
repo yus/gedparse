@@ -1,7 +1,4 @@
-import { GedcomRecord } from './GedcomRecord.js';
-import { GedcomField } from './GedcomField.js';
-
-export class GedcomParser {
+class GedcomParser {
     #records;
     #lineNumber;
 
@@ -117,7 +114,4 @@ export class GedcomParser {
     }
 }
 
-// Global class
-if (typeof window !== 'undefined') {
-    window.GedcomParser = GedcomParser;
-}
+window.GedcomParser = GedcomParser;

@@ -1,6 +1,4 @@
-import { GedcomField } from './GedcomField.js';
-
-export class GedcomRecord {
+class GedcomRecord {
     #id;
     #type;
     #fields;
@@ -53,7 +51,4 @@ export class GedcomRecord {
     }
 }
 
-// Global class
-if (typeof window !== 'undefined') {
-    window.GedcomRecord = GedcomRecord;
-}
+window.GedcomRecord = GedcomRecord;

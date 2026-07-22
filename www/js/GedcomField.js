@@ -1,4 +1,4 @@
-export class GedcomField {
+class GedcomField {
     #tag;
     #value;
     #children;
@@ -55,7 +55,4 @@ export class GedcomField {
     }
 }
 
-// Global class
-if (typeof window !== 'undefined') {
-    window.GedcomField = GedcomField;
-}
+window.GedcomField = GedcomField;

@@ -1,7 +1,4 @@
-/**
- * Утилиты для работы с датами в GEDCOM
- */
-export class DateUtils {
+class DateUtils {
     /**
      * Парсит дату из строки GEDCOM
      * @param {string} dateStr - строка даты
@@ -254,7 +251,4 @@ export class DateUtils {
     }
 }
 
-// Global class
-if (typeof window !== 'undefined') {
-    window.DateUtils = DateUtils;
-}
+window.DateUtils = DateUtils;

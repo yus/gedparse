@@ -1,8 +1,4 @@
-import { GedcomRecord } from './GedcomRecord.js';
-import { GedcomField } from './GedcomField.js';
-import { DateUtils } from './DateUtils.js';
-
-export class GedcomConverter {
+class GedcomConverter {
     #warnings;
     #conversionLog;
 
@@ -400,7 +396,4 @@ export class GedcomConverter {
     }
 }
 
-// Global class.
-if (typeof window !== 'undefined') {
-    window.GedcomConverter = GedcomConverter;
-}
+window.GedcomConverter = GedcomConverter;
