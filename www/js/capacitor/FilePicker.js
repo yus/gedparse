@@ -5,13 +5,9 @@ class FilePicker {
     static async selectFolder() {
         try {
             const result = await CapawesomeFilePicker.pickDirectory();
-            if (result && result.path) {
-                return result.path;
-            }
-            return null;
-        } catch (error) {
-            console.error('❌ Ошибка выбора папки:', error);
-            throw error;
+            return result?.path || null;
+        } catch (e) {
+            throw new Error(`Ошибка выбора папки: ${e.message}`);
         }
     }
 
@@ -21,47 +17,38 @@ class FilePicker {
                 path: folderPath,
                 directory: Directory.Documents
             });
-
-            const files = result.files
-                .filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.ged'))
-                .map(f => ({
-                    name: f.name,
-                    path: f.uri || f.name,
-                    size: f.size || 0
-                }));
-
-            return { files };
-        } catch (error) {
-            console.error('❌ listGedFiles error:', error);
-            throw error;
+            return {
+                files: result.files
+                    .filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.ged'))
+                    .map(f => ({ name: f.name, size: f.size || 0 }))
+            };
+        } catch (e) {
+            throw new Error(`Ошибка чтения папки: ${e.message}`);
         }
     }
 
     static async readFile(filename, folderPath) {
         try {
-            const filePath = `${folderPath}/${filename}`;
             const result = await Filesystem.readFile({
-                path: filePath,
+                path: `${folderPath}/${filename}`,
                 directory: Directory.Documents,
                 encoding: Encoding.UTF8
             });
             return typeof result === 'string' ? result : result.data;
-        } catch (error) {
+        } catch (e) {
             throw new Error(`Не удалось прочитать файл: ${filename}`);
         }
     }
 
     static async saveFile(filename, content, folderPath) {
         try {
-            const filePath = `${folderPath}/${filename}`;
-            const result = await Filesystem.writeFile({
-                path: filePath,
-                data: typeof content === 'string' ? content : JSON.stringify(content),
+            return await Filesystem.writeFile({
+                path: `${folderPath}/${filename}`,
+                data: content,
                 directory: Directory.Documents,
                 encoding: Encoding.UTF8
             });
-            return result;
-        } catch (error) {
+        } catch (e) {
             throw new Error(`Не удалось сохранить файл: ${filename}`);
         }
     }
