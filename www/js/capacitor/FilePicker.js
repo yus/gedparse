@@ -137,3 +137,8 @@ export class FilePicker {
         }
     }
 }
+
+// Global class
+if (typeof window !== 'undefined') {
+    window.FilePicker = FilePicker;
+}

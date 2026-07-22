@@ -1,5 +1,5 @@
-import { GedcomRecord } from '../models/GedcomRecord.js';
-import { GedcomField } from '../models/GedcomField.js';
+import { GedcomRecord } from './GedcomRecord.js';
+import { GedcomField } from './GedcomField.js';
 
 export class GedcomParser {
     #records;
@@ -115,4 +115,9 @@ export class GedcomParser {
 
         return stats;
     }
+}
+
+// Global class
+if (typeof window !== 'undefined') {
+    window.GedcomParser = GedcomParser;
 }

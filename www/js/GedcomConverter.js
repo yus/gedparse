@@ -1,6 +1,6 @@
-import { GedcomRecord } from '../models/GedcomRecord.js';
-import { GedcomField } from '../models/GedcomField.js';
-import { DateUtils } from '../utils/DateUtils.js';
+import { GedcomRecord } from './GedcomRecord.js';
+import { GedcomField } from './GedcomField.js';
+import { DateUtils } from './DateUtils.js';
 
 export class GedcomConverter {
     #warnings;
@@ -398,4 +398,9 @@ export class GedcomConverter {
     get conversionLog() {
         return this.#conversionLog;
     }
+}
+
+// Global class.
+if (typeof window !== 'undefined') {
+    window.GedcomConverter = GedcomConverter;
 }
