@@ -40,6 +40,32 @@ fileManagerContainer.style.cssText = `
 document.querySelector('.table-container').before(fileManagerContainer);
 
 // ============================================
+// ВЫБОР ПАПКИ ЧЕРЕЗ SAF
+// ============================================
+
+btnSelectFolder?.addEventListener('click', async () => {
+    try {
+        // Запрашиваем у пользователя выбор папки
+        const result = await Filesystem.requestPermissions({
+            permissions: ['publicStorage']
+        });
+        
+        if (result.publicStorage === 'granted') {
+            // Используем Filesystem для выбора директории
+            const uri = await Filesystem.chooseDirectory();
+            if (uri) {
+                // Сохраняем URI для дальнейшей работы
+                localStorage.setItem('selectedFolderUri', uri);
+                updateStatus(`✅ Выбрана папка: ${uri}`);
+            }
+        }
+    } catch (error) {
+        console.error('❌ Ошибка выбора папки:', error);
+        updateStatus('❌ Ошибка выбора папки');
+    }
+});
+
+// ============================================
 // ФАЙЛОВЫЙ МЕНЕДЖЕР
 // ============================================
 
