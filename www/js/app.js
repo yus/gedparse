@@ -1,10 +1,14 @@
+// ============================================
+// ИМПОРТЫ (глобальные классы уже загружены)
+// ============================================
+
 console.log('=== GEDParse APP START ===');
 console.log('📱 Capacitor:', typeof Capacitor !== 'undefined' ? '✅' : '❌');
-console.log('📁 Filesystem:', typeof Filesystem !== 'undefined' ? '✅' : '❌');
-console.log('📂 Directory:', Directory);
+console.log('📁 Filesystem:', Capacitor?.Plugins?.Filesystem ? '✅' : '❌');
+console.log('📁 FilePicker:', Capacitor?.Plugins?.FilePicker ? '✅' : '❌');
 console.log('=============================');
 
-// Инициализация
+// Инициализация (классы доступны глобально)
 const parser = new GedcomParser();
 const converter = new GedcomConverter();
 const validator = new MigrationValidator();
@@ -14,6 +18,7 @@ let convertedRecords = [];
 let warnings = [];
 
 // DOM элементы
+const btnSelectFolder = document.getElementById('btnSelectFolder');
 const btnLoad = document.getElementById('btnLoad');
 const btnValidate = document.getElementById('btnValidate');
 const btnConvert = document.getElementById('btnConvert');
@@ -24,28 +29,16 @@ const statsEl = document.getElementById('stats');
 const recordCountEl = document.getElementById('recordCount');
 const warningCountEl = document.getElementById('warningCount');
 
-// Создаем контейнер для файлового менеджера
-const fileManagerContainer = document.createElement('div');
-fileManagerContainer.id = 'fileManager';
-fileManagerContainer.style.cssText = `
-    background: white;
-    border-radius: 12px;
-    padding: 16px;
-    margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    display: none;
-    max-height: 400px;
-    overflow-y: auto;
-`;
-document.querySelector('.table-container').before(fileManagerContainer);
+// Контейнер для файлового менеджера
+const fileManagerContainer = document.getElementById('fileManager');
 
 // ============================================
-// ВЫБОР ПАПКИ ЧЕРЕЗ SAF
+// КНОПКА "ВЫБРАТЬ ПАПКУ"
 // ============================================
 
-document.getElementById('btnSelectFolder')?.addEventListener('click', async () => {
+btnSelectFolder?.addEventListener('click', async () => {
     try {
-        updateStatus('📁 Выберите папку для GEDCOM файлов...');
+        updateStatus('📁 Выберите папку с GEDCOM файлами...');
         const uri = await FilePicker.selectFolder();
         if (uri) {
             updateStatus(`✅ Выбрана папка: ${uri}`);
@@ -60,11 +53,14 @@ document.getElementById('btnSelectFolder')?.addEventListener('click', async () =
 });
 
 // ============================================
-// ФАЙЛОВЫЙ МЕНЕДЖЕР
+// КНОПКА "ПРИМЕРЫ"
 // ============================================
 
-// Показать файловый менеджер
-btnLoad.addEventListener('click', async () => {
+if (btnLoad) {
+    btnLoad.textContent = '📝 Примеры';
+}
+
+btnLoad?.addEventListener('click', async () => {
     try {
         await showFileManager();
     } catch (error) {
@@ -72,6 +68,10 @@ btnLoad.addEventListener('click', async () => {
         updateStatus(`❌ Ошибка: ${error.message}`);
     }
 });
+
+// ============================================
+// ПОКАЗАТЬ ФАЙЛОВЫЙ МЕНЕДЖЕР
+// ============================================
 
 async function showFileManager() {
     fileManagerContainer.style.display = 'block';
@@ -86,47 +86,34 @@ async function refreshFileList() {
         
         let html = `
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <div style="font-weight:bold;">📁 ${result.currentDir}</div>
-                <div style="font-size:12px;color:#999;">${result.totalFiles} .ged файлов</div>
+                <div style="font-weight:bold;">📁 ${result.currentDir || 'Не выбрана'}</div>
+                <div style="font-size:12px;color:#999;">${result.totalFiles || 0} .ged файлов</div>
             </div>
         `;
         
-        // Кнопки создания примеров
-        html += `
-            <div style="display:flex;gap:8px;margin-bottom:12px;">
-                <button onclick="window.createSample('5.5.1')" style="flex:1;padding:8px;background:#2196F3;color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;">
-                    📝 Пример 5.5.1
-                </button>
-                <button onclick="window.createSample('7.0')" style="flex:1;padding:8px;background:#4CAF50;color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;">
-                    📝 Пример 7.0
-                </button>
-            </div>
-        `;
-        
-        // Папки
-        if (result.directories && result.directories.length > 0) {
-            html += `<div style="margin-bottom:8px;font-size:12px;color:#666;">📂 Папки:</div>`;
-            result.directories.forEach(dir => {
-                html += `
-                    <div style="cursor:pointer;padding:8px;border-bottom:1px solid #eee;" 
-                         onclick="window.openDirectory('${dir}')">
-                        📂 ${dir}
-                    </div>
-                `;
-            });
+        // Если папка пустая — показываем кнопки создания примеров
+        if (result.files && result.files.length === 0) {
+            html += `
+                <div style="display:flex;gap:8px;margin-bottom:12px;">
+                    <button onclick="window.createSample('5.5.1')" style="flex:1;padding:8px;background:#2196F3;color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;">
+                        📝 Пример 5.5.1
+                    </button>
+                    <button onclick="window.createSample('7.0')" style="flex:1;padding:8px;background:#4CAF50;color:white;border:none;border-radius:4px;font-size:12px;cursor:pointer;">
+                        📝 Пример 7.0
+                    </button>
+                </div>
+            `;
         }
         
-        // Файлы
+        // Список файлов
         if (result.files && result.files.length > 0) {
             html += `<div style="margin:8px 0;font-size:12px;color:#666;">📄 Файлы:</div>`;
             result.files.forEach(file => {
                 const sizeKB = (file.size / 1024).toFixed(1);
-                const isSample = file.name.includes('sample');
-                const icon = isSample ? '🧪' : '📄';
                 html += `
                     <div style="cursor:pointer;padding:8px;border-bottom:1px solid #eee;display:flex;justify-content:space-between;align-items:center;" 
                          onclick="window.loadFile('${file.name}')">
-                        <span>${icon} ${file.name}</span>
+                        <span>📄 ${file.name}</span>
                         <span style="font-size:11px;color:#999;">${sizeKB} KB</span>
                     </div>
                 `;
@@ -134,15 +121,16 @@ async function refreshFileList() {
         } else {
             html += `
                 <div style="padding:20px;text-align:center;color:#999;">
-                    Нет .ged файлов в папке ${result.currentDir}
+                    Нет .ged файлов в выбранной папке
                     <br><br>
-                    <span style="font-size:12px;">Нажмите кнопки выше, чтобы создать примеры</span>
+                    <span style="font-size:12px;">Нажмите "Примеры", чтобы создать тестовые файлы</span>
                 </div>
             `;
         }
         
         fileManagerContainer.innerHTML = html;
-        updateStatus(`📂 Папка: ${result.currentDir} (${result.totalFiles} .ged файлов)`);
+        fileManagerContainer.style.display = 'block';
+        updateStatus(`📂 Папка: ${result.currentDir || 'Не выбрана'} (${result.totalFiles || 0} .ged файлов)`);
         
     } catch (error) {
         console.error('❌ Error:', error);
@@ -156,85 +144,6 @@ async function refreshFileList() {
                 </button>
             </div>
         `;
-    }
-}
-
-// ============================================
-// СОЗДАНИЕ ПРИМЕРОВ
-// ============================================
-
-async function createSampleFile(version) {
-    try {
-        let content = '';
-        let filename = '';
-        
-        if (version === '5.5.1') {
-            filename = 'sample_5_5_1.ged';
-            content = `0 HEAD
-1 GEDC
-2 VERS 5.5.1
-1 CHAR UTF-8
-0 @I1@ INDI
-1 NAME John /Doe/
-2 GIVN John
-2 SURN Doe
-1 SEX M
-1 BIRT
-2 DATE 15 JAN 1980
-1 DEAT
-2 DATE 20 MAR 2020
-0 @I2@ INDI
-1 NAME Mary /Smith/
-2 GIVN Mary
-2 SURN Smith
-1 SEX F
-1 BIRT
-2 DATE 10 JUN 1985
-1 FAMC @F1@
-0 @F1@ FAM
-1 HUSB @I1@
-1 WIFE @I2@
-1 MARR
-2 DATE 14 FEB 2010
-0 TRLR`;
-        } else if (version === '7.0') {
-            filename = 'sample_7_0.ged';
-            content = `0 HEAD
-1 GEDC
-2 VERS 7.0
-1 CHAR UTF-8
-0 @I1@ INDI
-1 NAME John /Doe/
-2 GIVN John
-2 SURN Doe
-1 SEX M
-1 BIRT
-2 DATE 15 JAN 1980
-1 DEAT
-2 DATE 20 MAR 2020
-0 @I2@ INDI
-1 NAME Mary /Smith/
-2 GIVN Mary
-2 SURN Smith
-1 SEX F
-1 BIRT
-2 DATE 10 JUN 1985
-1 FAMC @F1@
-0 @F1@ FAM
-1 HUSB @I1@
-1 WIFE @I2@
-1 MARR
-2 DATE 14 FEB 2010
-0 TRLR`;
-        }
-        
-        await FilePicker.saveFile(filename, content);
-        updateStatus(`✅ Создан пример: ${filename}`);
-        await refreshFileList();
-        
-    } catch (error) {
-        console.error('❌ Error:', error);
-        updateStatus(`❌ Ошибка создания примера: ${error.message}`);
     }
 }
 
@@ -259,9 +168,7 @@ window.loadFile = async function(filename) {
         btnConvert.disabled = false;
         btnExport.disabled = true;
         
-        // Закрываем файловый менеджер
         fileManagerContainer.style.display = 'none';
-        
     } catch (error) {
         console.error('❌ Error:', error);
         updateStatus(`❌ Ошибка: ${error.message}`);
@@ -269,10 +176,36 @@ window.loadFile = async function(filename) {
 };
 
 // ============================================
+// СОЗДАНИЕ ПРИМЕРОВ
+// ============================================
+
+window.createSample = async function(version) {
+    try {
+        let content = '';
+        let filename = '';
+        
+        if (version === '5.5.1') {
+            filename = 'sample_5_5_1.ged';
+            content = `0 HEAD\n1 GEDC\n2 VERS 5.5.1\n1 CHAR UTF-8\n0 @I1@ INDI\n1 NAME John /Doe/\n2 GIVN John\n2 SURN Doe\n1 SEX M\n1 BIRT\n2 DATE 15 JAN 1980\n1 DEAT\n2 DATE 20 MAR 2020\n0 @I2@ INDI\n1 NAME Mary /Smith/\n2 GIVN Mary\n2 SURN Smith\n1 SEX F\n1 BIRT\n2 DATE 10 JUN 1985\n1 FAMC @F1@\n0 @F1@ FAM\n1 HUSB @I1@\n1 WIFE @I2@\n1 MARR\n2 DATE 14 FEB 2010\n0 TRLR`;
+        } else if (version === '7.0') {
+            filename = 'sample_7_0.ged';
+            content = `0 HEAD\n1 GEDC\n2 VERS 7.0\n1 CHAR UTF-8\n0 @I1@ INDI\n1 NAME John /Doe/\n2 GIVN John\n2 SURN Doe\n1 SEX M\n1 BIRT\n2 DATE 15 JAN 1980\n1 DEAT\n2 DATE 20 MAR 2020\n0 @I2@ INDI\n1 NAME Mary /Smith/\n2 GIVN Mary\n2 SURN Smith\n1 SEX F\n1 BIRT\n2 DATE 10 JUN 1985\n1 FAMC @F1@\n0 @F1@ FAM\n1 HUSB @I1@\n1 WIFE @I2@\n1 MARR\n2 DATE 14 FEB 2010\n0 TRLR`;
+        }
+        
+        await FilePicker.saveFile(filename, content);
+        updateStatus(`✅ Создан пример: ${filename}`);
+        await refreshFileList();
+    } catch (error) {
+        console.error('❌ Error:', error);
+        updateStatus(`❌ Ошибка создания примера: ${error.message}`);
+    }
+};
+
+// ============================================
 // ПРОВЕРКА
 // ============================================
 
-btnValidate.addEventListener('click', () => {
+btnValidate?.addEventListener('click', () => {
     if (currentRecords.length === 0) {
         updateStatus('⚠️ Сначала загрузите файл');
         return;
@@ -293,7 +226,7 @@ btnValidate.addEventListener('click', () => {
 // КОНВЕРТАЦИЯ
 // ============================================
 
-btnConvert.addEventListener('click', () => {
+btnConvert?.addEventListener('click', () => {
     if (currentRecords.length === 0) {
         updateStatus('⚠️ Сначала загрузите файл');
         return;
@@ -318,7 +251,7 @@ btnConvert.addEventListener('click', () => {
 // ЭКСПОРТ
 // ============================================
 
-btnExport.addEventListener('click', async () => {
+btnExport?.addEventListener('click', async () => {
     if (convertedRecords.length === 0) {
         updateStatus('⚠️ Нет данных для экспорта');
         return;
@@ -345,7 +278,7 @@ btnExport.addEventListener('click', async () => {
 // ============================================
 
 function renderTable(records) {
-    if (records.length === 0) {
+    if (!records || records.length === 0) {
         tableBody.innerHTML = '<tr><td colspan="3" class="empty-state">Нет записей</td></tr>';
         return;
     }
@@ -371,33 +304,30 @@ function renderTable(records) {
 }
 
 function updateStatus(message) {
-    statusEl.textContent = message;
+    if (statusEl) statusEl.textContent = message;
 }
 
 function updateStats(count, warningsCount) {
-    statsEl.style.display = 'block';
-    recordCountEl.textContent = count;
-    warningCountEl.textContent = warningsCount;
+    if (statsEl) statsEl.style.display = 'block';
+    if (recordCountEl) recordCountEl.textContent = count;
+    if (warningCountEl) warningCountEl.textContent = warningsCount;
 }
 
 function showWarnings(warnings) {
     const message = warnings.slice(0, 20).map(w => 
         `⚠️ ${w.recordId}: ${w.field} -> ${w.message}\n💡 ${w.suggestion}`
     ).join('\n\n');
-    
     alert(`Найдено ${warnings.length} предупреждений:\n\n${message}`);
 }
 
 function generateGedcom(records) {
     let content = '0 HEAD\n1 GEDC\n2 VERS 7.0\n1 CHAR UTF-8\n';
-    
     records.forEach(record => {
         content += `0 ${record.id} ${record.type}\n`;
         record.fields.forEach(field => {
             content += generateField(field, 1);
         });
     });
-    
     content += '0 TRLR\n';
     return content;
 }
@@ -416,113 +346,12 @@ function generateField(field, level) {
 // ============================================
 
 window.refreshFileList = refreshFileList;
-window.createSample = createSampleFile;
 window.loadFile = window.loadFile;
-window.openDirectory = async function(dir) {
-    try {
-        // Здесь можно реализовать навигацию по папкам
-        updateStatus(`📂 Переход в папку ${dir}...`);
-        // Пока просто обновляем список
-        await refreshFileList();
-    } catch (error) {
-        console.error('❌ Error:', error);
-        updateStatus(`❌ Ошибка: ${error.message}`);
-    }
-};
+window.createSample = window.createSample;
 
 // ============================================
 // ИНИЦИАЛИЗАЦИЯ
 // ============================================
 
 console.log('🧬 GEDParse app initialized');
-updateStatus('Ожидание загрузки...');
-
-// ============================================
-// ОТЛАДКА
-// ============================================
-
-const btnDebug = document.createElement('button');
-btnDebug.id = 'btnDebug';
-btnDebug.className = 'btn';
-btnDebug.style.cssText = 'background:#FF5722;color:white;';
-btnDebug.textContent = '🐛 Отладка';
-document.querySelector('.toolbar').appendChild(btnDebug);
-
-btnDebug.addEventListener('click', async () => {
-    console.log('🐛 DEBUG MODE');
-    
-    let debugInfo = '=== ОТЛАДКА ===\n\n';
-    
-    try {
-        // 1. Проверяем Capacitor
-        debugInfo += `📱 Capacitor: ${typeof Capacitor !== 'undefined' ? '✅' : '❌'}\n`;
-        if (typeof Capacitor !== 'undefined') {
-            debugInfo += `   Platform: ${Capacitor.getPlatform()}\n`;
-        }
-        
-        // 2. Проверяем Filesystem
-        debugInfo += `\n📁 Filesystem: ${typeof Filesystem !== 'undefined' ? '✅' : '❌'}\n`;
-        
-        // 3. Проверяем папку Gedparse
-        debugInfo += '\n📂 Проверка папки Gedparse:\n';
-        try {
-            const result = await Filesystem.readdir({
-                path: 'Gedparse',
-                directory: Directory.Documents
-            });
-            debugInfo += `   ✅ Папка существует\n`;
-            debugInfo += `   📄 Файлов: ${result.files.length}\n`;
-            result.files.forEach(f => {
-                debugInfo += `      - ${f.name} (${f.type})\n`;
-            });
-        } catch (e) {
-            debugInfo += `   ❌ Папка не найдена: ${e.message}\n`;
-            
-            // Пробуем создать
-            try {
-                await Filesystem.mkdir({
-                    path: 'Gedparse',
-                    directory: Directory.Documents,
-                    recursive: true
-                });
-                debugInfo += `   ✅ Папка создана!\n`;
-            } catch (createError) {
-                debugInfo += `   ❌ Ошибка создания: ${createError.message}\n`;
-            }
-        }
-        
-        // 4. Проверяем другие директории
-        debugInfo += '\n📁 Проверка других директорий:\n';
-        const dirs = ['Documents', 'Downloads', 'Data', 'Cache'];
-        for (const dir of dirs) {
-            try {
-                const result = await Filesystem.readdir({
-                    path: '',
-                    directory: Directory[dir]
-                });
-                debugInfo += `   ✅ ${dir}: ${result.files.length} файлов\n`;
-            } catch (e) {
-                debugInfo += `   ❌ ${dir}: ${e.message}\n`;
-            }
-        }
-        
-        // 5. Состояние приложения
-        debugInfo += '\n📊 Состояние приложения:\n';
-        debugInfo += `   Записей загружено: ${currentRecords.length}\n`;
-        debugInfo += `   Сконвертировано: ${convertedRecords.length}\n`;
-        debugInfo += `   Предупреждений: ${warnings.length}\n`;
-        
-    } catch (error) {
-        debugInfo += `\n❌ Ошибка отладки: ${error.message}\n`;
-        console.error('Debug error:', error);
-    }
-    
-    // Показываем в alert
-    alert(debugInfo);
-    
-    // И в консоль
-    console.log(debugInfo);
-});
-
-// Обновляем статус при запуске
-updateStatus('🚀 Приложение запущено. Нажмите "Отладка" для проверки.');
+updateStatus('🚀 Приложение запущено. Выберите папку с GEDCOM файлами.');
