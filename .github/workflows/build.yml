@@ -33,7 +33,7 @@ jobs:
       run: |
         npm install --no-audit --no-fund --legacy-peer-deps
         npm install -D @capacitor/cli
-        npm install @capacitor/android @capacitor/core @capacitor/filesystem
+        npm install @capacitor/android @capacitor/core @capacitor/filesystem @capawesome/capacitor-file-picker
     
     - name: Build Android APK
       run: |

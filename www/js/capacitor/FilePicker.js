@@ -1,48 +1,18 @@
-const Filesystem = Capacitor.Plugins.Filesystem;
-
-const Directory = {
-    Documents: 'DOCUMENTS',
-    Downloads: 'DOWNLOADS',
-    Data: 'DATA',
-    Cache: 'CACHE'
-};
-
-const Encoding = {
-    UTF8: 'utf8'
-};
+// Импортируем плагин
+import { FilePicker as CapawesomeFilePicker } from '@capawesome/capacitor-file-picker';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 
 class FilePicker {
-    static BASE_DIR = 'Gedparse';
-    static selectedUri = null;
+    static selectedPath = null;
 
-    static init() {
-        const saved = localStorage.getItem('gedparse_folder_uri');
-        if (saved) {
-            this.selectedUri = saved;
-            console.log('📂 Восстановлен URI:', saved);
-        }
-    }
-
-    // ВЫБОР ПАПКИ ЧЕРЕЗ SAF
     static async selectFolder() {
         try {
-            // Проверяем разрешения
-            const perms = await Filesystem.requestPermissions({
-                permissions: ['publicStorage']
-            });
-            
-            if (perms.publicStorage !== 'granted') {
-                throw new Error('Нет разрешения на доступ к хранилищу');
-            }
-
-            // Открываем диалог выбора папки (SAF!)
-            const result = await Filesystem.chooseDirectory();
-            
-            if (result && result.uri) {
-                this.selectedUri = result.uri;
-                localStorage.setItem('gedparse_folder_uri', result.uri);
-                console.log('✅ Выбрана папка:', result.uri);
-                return result.uri;
+            // Используем pickDirectory() из плагина
+            const result = await CapawesomeFilePicker.pickDirectory();
+            if (result && result.path) {
+                this.selectedPath = result.path;
+                localStorage.setItem('gedparse_folder_path', result.path);
+                return result.path;
             }
             return null;
         } catch (error) {
@@ -51,18 +21,19 @@ class FilePicker {
         }
     }
 
-    // Получить список файлов из выбранной папки
     static async listGedFiles() {
         try {
-            if (!this.selectedUri) {
-                await this.selectFolder();
-                if (!this.selectedUri) {
-                    return { files: [], directories: [], currentDir: 'Не выбрана', totalFiles: 0 };
+            if (!this.selectedPath) {
+                const saved = localStorage.getItem('gedparse_folder_path');
+                if (saved) {
+                    this.selectedPath = saved;
+                } else {
+                    await this.selectFolder();
                 }
             }
 
             const result = await Filesystem.readdir({
-                path: this.selectedUri,
+                path: this.selectedPath,
                 directory: Directory.Documents
             });
 
@@ -81,60 +52,45 @@ class FilePicker {
             return {
                 files,
                 directories,
-                currentDir: this.selectedUri,
+                currentDir: this.selectedPath,
                 totalFiles: files.length
             };
         } catch (error) {
             console.error('❌ listGedFiles error:', error);
-            this.selectedUri = null;
-            localStorage.removeItem('gedparse_folder_uri');
+            this.selectedPath = null;
+            localStorage.removeItem('gedparse_folder_path');
             throw error;
         }
     }
 
     static async readFile(filename) {
         try {
-            if (!this.selectedUri) {
-                await this.selectFolder();
-            }
-
-            const filePath = this.selectedUri ? `${this.selectedUri}/${filename}` : filename;
-            
+            const filePath = `${this.selectedPath}/${filename}`;
             const result = await Filesystem.readFile({
                 path: filePath,
                 directory: Directory.Documents,
                 encoding: Encoding.UTF8
             });
-
             return typeof result === 'string' ? result : result.data;
         } catch (error) {
-            console.error('❌ readFile error:', error);
             throw new Error(`Не удалось прочитать файл: ${filename}`);
         }
     }
 
     static async saveFile(filename, content) {
         try {
-            if (!this.selectedUri) {
-                await this.selectFolder();
-            }
-
-            const filePath = this.selectedUri ? `${this.selectedUri}/${filename}` : filename;
-            
+            const filePath = `${this.selectedPath}/${filename}`;
             const result = await Filesystem.writeFile({
                 path: filePath,
                 data: typeof content === 'string' ? content : JSON.stringify(content),
                 directory: Directory.Documents,
                 encoding: Encoding.UTF8
             });
-
             return result;
         } catch (error) {
-            console.error('❌ saveFile error:', error);
             throw new Error(`Не удалось сохранить файл: ${filename}`);
         }
     }
 }
 
-FilePicker.init();
 window.FilePicker = FilePicker;
