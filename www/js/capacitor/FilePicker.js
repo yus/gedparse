@@ -52,6 +52,8 @@ class FilePicker {
                 directory: Directory.Documents
             });
             
+            console.log('📋 Raw result:', result);
+            
             const files = result.files
                 .filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.ged'))
                 .map(f => ({
@@ -88,9 +90,11 @@ class FilePicker {
                 encoding: Encoding.UTF8
             });
             
-            // Исправление: result.data содержит содержимое
+            console.log('📖 Raw result:', result);
+            
+            // Извлекаем содержимое
             const content = typeof result === 'string' ? result : result.data;
-            console.log(`✅ Read ${content.length} bytes`);
+            console.log(`✅ Read ${content?.length || 0} bytes`);
             return content;
         } catch (error) {
             console.error('❌ readFile error:', error);
@@ -102,12 +106,16 @@ class FilePicker {
         try {
             const filePath = `${this.BASE_DIR}/${filename}`;
             console.log(`💾 Saving: ${filePath}`);
+            console.log(`📝 Content length: ${content?.length || 0}`);
             
             await this.ensureDirectory();
             
+            // Убедимся, что content — это строка
+            const dataToSave = typeof content === 'string' ? content : JSON.stringify(content);
+            
             const result = await Filesystem.writeFile({
                 path: filePath,
-                data: content,
+                data: dataToSave,
                 directory: Directory.Documents,
                 encoding: Encoding.UTF8
             });
@@ -116,7 +124,7 @@ class FilePicker {
             return result;
         } catch (error) {
             console.error('❌ saveFile error:', error);
-            throw new Error(`Не удалось сохранить файл: ${filename}`);
+            throw new Error(`Не удалось сохранить файл: ${filename} — ${error.message}`);
         }
     }
 }
