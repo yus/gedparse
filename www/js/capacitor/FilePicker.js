@@ -1,5 +1,3 @@
-// import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
-
 const { Filesystem, Directory, Encoding } = Capacitor.Plugins;
 
 export class FilePicker {

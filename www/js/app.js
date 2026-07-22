@@ -1,10 +1,3 @@
-// import { GedcomParser } from './GedcomParser.js';
-// import { GedcomConverter } from './GedcomConverter.js';
-// import { MigrationValidator } from './MigrationValidator.js';
-// import { FilePicker } from './capacitor/FilePicker.js';
-
-const { Filesystem, Directory, Encoding } = Capacitor.Plugins;
-
 console.log('=== GEDParse APP START ===');
 console.log('📱 Capacitor:', typeof Capacitor !== 'undefined' ? '✅' : '❌');
 console.log('📁 Filesystem:', typeof Filesystem !== 'undefined' ? '✅' : '❌');

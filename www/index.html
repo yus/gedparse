@@ -50,11 +50,25 @@
         </main>
     </div>
 
-    <!-- Загружаем классы через обычные script -->
+    <!-- ========================================== -->
+    <!-- ЗАГРУЗКА КЛАССОВ (ОБЯЗАТЕЛЬНО!) -->
+    <!-- ========================================== -->
+    
+    <!-- Модели -->
+    <script src="js/GedcomField.js"></script>
+    <script src="js/GedcomRecord.js"></script>
+    
+    <!-- Парсеры и конвертеры -->
     <script src="js/GedcomParser.js"></script>
     <script src="js/GedcomConverter.js"></script>
     <script src="js/MigrationValidator.js"></script>
+    <script src="js/DateUtils.js"></script>
+    <script src="js/TableRenderer.js"></script>
+    
+    <!-- Capacitor FilePicker -->
     <script src="js/capacitor/FilePicker.js"></script>
+    
+    <!-- ========================================== -->
     
     <!-- Основной app.js -->
     <script type="module" src="js/app.js"></script>
