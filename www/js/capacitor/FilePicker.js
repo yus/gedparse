@@ -1,14 +1,12 @@
 // Получаем Filesystem из глобального объекта
 const Filesystem = Capacitor.Plugins.Filesystem;
 
-// Определяем константы вручную (правильные значения для Capacitor)
+// Определяем константы вручную
 const Directory = {
     Documents: 'DOCUMENTS',
     Downloads: 'DOWNLOADS',
     Data: 'DATA',
-    Cache: 'CACHE',
-    External: 'EXTERNAL',
-    ExternalStorage: 'EXTERNAL_STORAGE'
+    Cache: 'CACHE'
 };
 
 const Encoding = {
@@ -54,30 +52,24 @@ class FilePicker {
                 directory: Directory.Documents
             });
             
-            console.log('📋 Full readdir result:', JSON.stringify(result, null, 2));
-            
             const files = result.files
                 .filter(f => f.type === 'file' && f.name.toLowerCase().endsWith('.ged'))
                 .map(f => ({
                     name: f.name,
                     path: `${this.BASE_DIR}/${f.name}`,
-                    size: f.size || 0,
-                    mtime: f.mtime || new Date(),
-                    uri: f.uri || ''
+                    size: f.size || 0
                 }));
             
             const directories = result.files
                 .filter(f => f.type === 'directory')
                 .map(f => f.name);
             
-            console.log(`✅ Found ${files.length} .ged files, ${directories.length} directories`);
-            
+            console.log(`✅ Found ${files.length} .ged files`);
             return {
                 files,
                 directories,
                 currentDir: this.BASE_DIR,
-                totalFiles: files.length,
-                rawResult: result
+                totalFiles: files.length
             };
         } catch (error) {
             console.error('❌ listGedFiles error:', error);
@@ -90,12 +82,14 @@ class FilePicker {
             const filePath = `${this.BASE_DIR}/${filename}`;
             console.log(`📖 Reading: ${filePath}`);
             
-            const content = await Filesystem.readFile({
+            const result = await Filesystem.readFile({
                 path: filePath,
                 directory: Directory.Documents,
                 encoding: Encoding.UTF8
             });
             
+            // Исправление: result.data содержит содержимое
+            const content = typeof result === 'string' ? result : result.data;
             console.log(`✅ Read ${content.length} bytes`);
             return content;
         } catch (error) {
